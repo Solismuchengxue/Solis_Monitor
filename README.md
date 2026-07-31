@@ -1,6 +1,17 @@
 # Solis Monitor
 
-使用 ESP-IDF 6.0.2 开发的 ESP32-S3 + NT35510 800×480 电脑副屏项目。Windows 桌面端基于已中文化的 Libre Hardware Monitor v0.9.6 源码开发，位于 `app/`。
+Solis Monitor 是一套由 Windows 桌面控制中心与 ESP32-S3 副屏组成的端到端 IoT 监控和设备管理系统。它将电脑硬件、网络、Codex 使用情况、天气与本地环境数据汇聚为统一快照，并显示在 NT35510 3.97 英寸 800×480 屏幕上。
+
+项目不止包含数据展示界面，还覆盖需求基线、总体架构、跨端协议、设备配网与配对、安全控制、OTA 回滚、自动化测试和运维文档，形成从方案设计到稳定交付的完整工程闭环。
+
+> **技术栈：** C# / .NET 10 / WPF · Libre Hardware Monitor · ESP-IDF 6.0.2 / C · ESP32-S3 · HTTP / JSON · NVS · 双分区 OTA
+
+## 工程亮点
+
+- **端到端方案与交付**：从[需求基线](docs/REQUIREMENTS.md)、[总体设计](DESIGN.md)和架构决策出发，完成 Windows 应用、嵌入式固件、设备接口、部署与验收资料的协同落地。
+- **跨端系统集成**：Windows 端统一采集 CPU、GPU、内存、存储、网络及 Codex 指标，通过 schema 1 HTTP/JSON 协议发布不可变快照；ESP32-S3 每秒拉取并事务性更新界面，异常数据不会覆盖最后有效状态。
+- **设备全生命周期管理**：实现 AP Web 配网、局域网发现、6 位码配对、Bearer Token 鉴权、亮度与夜间计划、远程诊断，以及带镜像校验、双槽切换和失败回滚的局域网 OTA。
+- **可验证、可维护**：建立[协议](docs/PROTOCOL.md)、[配网](docs/PROVISIONING.md)、[测试](docs/TESTING.md)和运维文档；验证体系覆盖桌面端冒烟测试、78 项固件单元测试和 20 项 Python 工具测试，并由 `tools/verify.ps1` 提供统一检查入口。
 
 ## 小屏效果
 
