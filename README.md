@@ -1,19 +1,16 @@
 # Solis Monitor
 
-Solis Monitor 是一套由 Windows 桌面控制中心与 ESP32-S3 副屏组成的端到端 IoT 监控和设备管理系统。它将电脑硬件、网络、Codex 使用情况、天气与本地环境数据汇聚为统一快照，并显示在 NT35510 3.97 英寸 800×480 屏幕上。
+Solis Monitor 是一套由 Windows 桌面控制中心与 ESP32-S3 副屏组成的端到端 IoT 监控和设备管理系统。它统一采集电脑硬件、网络、Codex 使用情况、天气与本地环境数据，并将实时状态呈现在 NT35510 3.97 英寸 800×480 屏幕上。
 
-项目不止包含数据展示界面，还覆盖需求基线、总体架构、跨端协议、设备配网与配对、安全控制、OTA 回滚、自动化测试和运维文档，形成从方案设计到稳定交付的完整工程闭环。
+项目覆盖需求、架构、跨端协议、设备配网与配对、安全控制、双分区 OTA、自动化测试和运维文档，形成从方案设计、软件实现到发布交付的完整工程闭环。
+
+[下载最新版本](https://github.com/Solismuchengxue/Solis_Monitor/releases/latest) · [总体设计](DESIGN.md) · [通信协议](docs/PROTOCOL.md) · [测试说明](docs/TESTING.md) · [MPL-2.0 许可证](LICENSE)
 
 > **技术栈：** C# / .NET 10 / WPF · Libre Hardware Monitor · ESP-IDF 6.0.2 / C · ESP32-S3 · HTTP / JSON · NVS · 双分区 OTA
 
-## 工程亮点
+## 效果预览
 
-- **端到端方案与交付**：从[需求基线](docs/REQUIREMENTS.md)、[总体设计](DESIGN.md)和架构决策出发，完成 Windows 应用、嵌入式固件、设备接口、部署与验收资料的协同落地。
-- **跨端系统集成**：Windows 端统一采集 CPU、GPU、内存、存储、网络及 Codex 指标，通过 schema 1 HTTP/JSON 协议发布不可变快照；ESP32-S3 每秒拉取并事务性更新界面，异常数据不会覆盖最后有效状态。
-- **设备全生命周期管理**：实现 AP Web 配网、局域网发现、6 位码配对、Bearer Token 鉴权、亮度与夜间计划、远程诊断，以及带镜像校验、双槽切换和失败回滚的局域网 OTA。
-- **可验证、可维护**：建立[协议](docs/PROTOCOL.md)、[配网](docs/PROVISIONING.md)、[测试](docs/TESTING.md)和运维文档；验证体系覆盖桌面端冒烟测试、78 项固件单元测试和 20 项 Python 工具测试，并由 `tools/verify.ps1` 提供统一检查入口。
-
-## 小屏效果
+### ESP32-S3 副屏
 
 ![Solis Monitor 小屏设备效果](docs/images/small-screen-hero.png)
 
@@ -21,108 +18,110 @@ Solis Monitor 是一套由 Windows 桌面控制中心与 ESP32-S3 副屏组成�
 | :---: | :---: |
 | ![Solis Monitor 电脑传感器页](docs/images/small-screen-pc.png) | ![Solis Monitor Codex 与环境页](docs/images/small-screen-codex.png) |
 
-## PC 端界面预览
+### Windows 控制中心
 
-### 设备管理
+| 设备管理 | 服务链路 | 固件更新 |
+| :---: | :---: | :---: |
+| ![Solis Monitor 设备管理界面](docs/images/solis-monitor-device.png) | ![Solis Monitor 服务链路界面](docs/images/solis-monitor-service.png) | ![Solis Monitor 固件更新界面](docs/images/solis-monitor-firmware.png) |
 
-![Solis Monitor 设备管理界面](docs/images/solis-monitor-device.png)
+## 工程亮点
 
-| 服务链路 | 固件更新 |
-| :---: | :---: |
-| ![Solis Monitor 服务链路界面](docs/images/solis-monitor-service.png) | ![Solis Monitor 固件更新界面](docs/images/solis-monitor-firmware.png) |
+- **端到端方案与交付**：从[需求基线](docs/REQUIREMENTS.md)、[总体设计](DESIGN.md)和[架构决策](docs/DECISIONS.md)出发，协同落地 Windows 应用、嵌入式固件、设备接口、部署与验收资料。
+- **跨端系统集成**：Windows 端统一采集 CPU、GPU、内存、存储、网络、Codex 和天气指标，通过 schema 1 HTTP/JSON 协议发布完整快照；ESP32-S3 每秒拉取并事务性更新界面，异常数据不会覆盖最后有效状态。
+- **设备全生命周期管理**：实现 AP Web 配网、局域网发现、6 位码配对、Bearer Token 鉴权、亮度与夜间计划、远程诊断，以及带镜像校验、双槽切换和失败回滚的局域网 OTA。
+- **可验证、可维护**：桌面端冒烟测试、78 项固件单元测试和 20 项 Python 工具测试覆盖核心链路，并由 `tools/verify.ps1` 提供统一检查入口。
 
-## PC 端源码
+## 系统架构
 
-- `app/`：Solis Monitor 新桌面端，也是后续 PC 功能的唯一开发基线。
-- `docs/DESKTOP_APP.md`：桌面端构建、运行和设备 API 说明。
-- `docs/WEATHER.md`：和风天气本地配置、刷新和失败回退说明。
-- `docs/PC_MIGRATION.md`：PC 端指标、协议、安全和迁移历史。
-当前新桌面端已保留 Libre Hardware Monitor 原有功能并完成中文化，CPU、GPU/显存、内存、物理硬盘、FPS、出口网速以及 Codex 最后活动项目指标已通过独立的 HTTP 设备 API 提供给 ESP32。Codex 指标包含项目、任务、模型、推理强度、上下文、累计 Token 和两类周额度。旧 Agent 的能力已迁入当前桌面端，原独立 Agent 源码已经移除。
-
-## 关键目录
-
-1) 启动与运行入口
-- `firmware/main/` 设备启动入口：`app_main.c`
-  - 作用：初始化串口、网络、UI、采集链路并启动主循环。
-- `firmware/components/` 固件功能模块库（建议按此处改需求）：
-  - `network_config/`：Wi-Fi/AP 配置、NVS 配置持久化
-  - `network_client/`：HTTP 客户端、服务端通信
-  - `metrics/`：指标协议（PC 指标 JSON 的编码/解析）
-  - `ui/` + `renderer/`：界面状态与绘制
-  - `display/`：液晶底层显示初始化/刷屏
-  - `serial_setup/`：串口与通信配置
-  - `firmware/components/board/`：板级引脚与按键/外设抽象
-  - `ui_assets/`：固件内嵌图片与字体资源
-- `app/LibreHardwareMonitor/LibreHardwareMonitor/`：PC 端主程序（桌面端采集服务）
-  - `Solis/` 目录：业务层（Codex 指标、硬件映射、网络采集、设备 API、安全）
-  - `UI/`：托盘/窗口交互与显示逻辑
-
-2) 数据与配置来源（你查问题/支持联调时最关键）
-- `reference/`：原理图、引脚定义、硬件参数、布局图、template 等
-- `reference/assets/`：小屏图标、字体、加载动图等显示素材（保留历史上 `assets/` 入口兼容）
-- `DESIGN.md`：稳定需求、总体架构和关键设计决策
-- `TODO.md`：当前任务、环境阻塞、实施顺序和验收条件的唯一台账
-- `docs/`：硬件说明、旧实现提炼、协议、测试、UI、Codex 和仓库审计等专题文档
-- `README.md` / `docs/DESKTOP_APP.md` / `docs/PC_MIGRATION.md`：当前默认行为、硬件约定、迁移与运行文档
-- `firmware/sdkconfig.defaults` / `firmware/partitions.csv`：固件构建与分区基线
-
-3) 构建、验证与发布（改完后必跑，且别把产物当源码）
-- `tools/generate_assets.py`：图片/字体转二进制资源
-- `tools/verify.ps1`：本地核验脚本
-- `tools/tests/` 与工具链相关的自动检查（辅助回归）
-- `app/tests/`：PC 端冒烟测试入口（当前为主功能验证补丁）
-- `firmware/test_apps/unit/`：固件单测工作区（重建成本较高，可按需使用）
-- `firmware/build/` / `firmware/test_apps/unit/build/` / `app/**/bin,obj` 构建产物目录（建议忽略，不作为代码关注主线）
-
-3 秒速览（先读这块）
-- 启动链路：`firmware/main/` + `firmware/components/*`（固件）+ `app/LibreHardwareMonitor/LibreHardwareMonitor/`（PC 采集服务）
-- 资料来源：`reference/`、`reference/assets/`、`README*`、`firmware/sdkconfig.defaults`/`firmware/partitions.csv`
-- 交付边界：`tools/` 及测试目录常改，`firmware/build`、`app/**/bin`、`app/**/obj` 常清理不提交
-
-## 运行与配网
-
-1. 编译后，以**管理员权限**启动 Solis Monitor：
-
-```powershell
-dotnet build .\app\LibreHardwareMonitor\LibreHardwareMonitor\LibreHardwareMonitor.csproj --configuration Release -p:Platform=x64
-& .\app\LibreHardwareMonitor\bin\Release\net10.0-windows\SolisMonitor.exe
+```mermaid
+flowchart LR
+    A["Windows 控制中心<br/>WPF / .NET 10"] --> B["硬件、网络、Codex、天气采集"]
+    B --> C["schema 1 指标快照"]
+    C -->|"HTTP / JSON"| D["ESP32-S3 固件<br/>ESP-IDF 6.0.2"]
+    A --> E["发现、配对、设备控制、OTA"]
+    E -->|"Bearer Token"| D
+    D --> F["NT35510<br/>800×480 副屏"]
 ```
 
-2. 设备令牌由桌面端生成，并在副屏开启发现后通过 6 位配对码自动同步。用户无需查看、复制或手工输入令牌。
+PC 端是指标与设备管理的数据权威，副屏负责按秒拉取快照并渲染。设备连续 5 秒没有收到有效数据时会进入离线状态，同时保留最后一次有效读数。PC 与 ESP32 当前使用 HTTP，因此只应部署在可信局域网中。
 
-3. Windows 防火墙规则为**手动且可选**操作：在 ESP32 需要从局域网访问 API 前才执行。请仅在受信任的专用网络配置文件中，以管理员身份执行：
+## 核心能力
 
-```powershell
-netsh advfirewall firewall add rule name="Solis Monitor Device API" dir=in action=allow protocol=TCP localport=18472 profile=private
-```
+| 领域 | 能力 |
+| --- | --- |
+| 电脑监控 | CPU、GPU/显存、内存、物理硬盘、FPS、出口网速与实时传感器 |
+| Codex 指标 | 最后活动项目与任务、模型、推理强度、上下文、累计 Token 和周额度 |
+| 环境信息 | 和风天气、本地温湿度、网络状态与失败回退 |
+| 设备管理 | AP Web 配网、自动发现、6 位码配对、令牌轮换、亮度和夜间计划 |
+| 固件维护 | 本地镜像检查、局域网 OTA、双应用槽、启动确认与失败回滚 |
+| Windows 体验 | 原生 WPF 控制中心、托盘运行、开机启动、诊断与原生通知 |
 
-4. 在 ESP-IDF 6.0.2 环境中构建并打开 COM4 串口：
+## 下载与运行
 
-```powershell
-Push-Location .\firmware
-idf.py set-target esp32s3
-idf.py build
-idf.py -p COM4 flash monitor
-Pop-Location
-```
+当前公开版本为 [Solis Monitor v0.9.6 Beta 1](https://github.com/Solismuchengxue/Solis_Monitor/releases/tag/v0.9.6-beta.1)，包含 Windows 桌面端 `0.9.6` 和 ESP32-S3 固件 `0.1.5`。
 
-5. 全新设备没有网络配置时，会自动开放 `Solis-Monitor-xxxx` 热点。手机连接后访问 `http://192.168.0.1/`，扫描并选择 Wi‑Fi，然后填写 Wi‑Fi 密码。已有配置时，长按 GPIO21 约 5 秒可再次进入配网；配网 10 分钟无操作会自动关闭。联网后双击 GPIO21 开启发现，再由桌面端设备向导输入小屏显示的 6 位配对码。
+| 文件 | 用途 |
+| --- | --- |
+| [Windows x64 安装包](https://github.com/Solismuchengxue/Solis_Monitor/releases/latest/download/SolisMonitor-0.9.6-win-x64-setup.exe) | 标准安装、开始菜单入口和可选桌面快捷方式 |
+| [Windows x64 便携版](https://github.com/Solismuchengxue/Solis_Monitor/releases/latest/download/SolisMonitor-0.9.6-win-x64-portable.zip) | 解压后运行 `SolisMonitor/SolisMonitor.exe` |
+| [ESP32-S3 OTA 固件](https://github.com/Solismuchengxue/Solis_Monitor/releases/latest/download/solis_monitor-0.1.5-esp32s3.bin) | 已完成双 OTA 分区迁移设备的局域网升级 |
+| [SHA-256 校验清单](https://github.com/Solismuchengxue/Solis_Monitor/releases/latest/download/SHA256SUMS.txt) | 校验下载文件完整性 |
 
-串口 `setup`、`show`、`reconnect`、`clear` 继续作为救援入口。`show` 只显示 SSID、IPv4、端口和令牌末四位，不显示 Wi‑Fi 密码或完整令牌。详细边界见 `docs/PROVISIONING.md`。
+Windows 端支持 Windows 10 1809 或更高版本的 x64 系统，需要 [.NET 10 Desktop Runtime x64](https://dotnet.microsoft.com/en-us/download/dotnet/10.0)；原生通知功能需要 [Windows App Runtime 2.3.1 x64](https://learn.microsoft.com/en-us/windows/apps/windows-app-sdk/downloads)。硬件传感器采集建议以管理员权限运行。
 
-设备每秒请求一次指标并更新屏幕；连续 5 秒没有有效响应时，数据源会显示为离线但保留最后一次有效数值。需要更换令牌时，在桌面端清除配对后重新执行 6 位码配对。API 使用 HTTP 而非 HTTPS，因此只应在可信局域网中使用。
+当前安装包和主程序尚未数字签名，Windows 可能显示“未知发布者”。首次从旧单 `factory` 分区迁移的设备不能只上传 OTA 文件，仍需按[固件文档](docs/FIRMWARE.md)完成一次完整串口烧录。
 
-Codex 页面会显示最后活动的主任务、当前上下文占用和 7 天剩余额度；子代理不会抢占任务名称。当前问题和后续功能统一维护在 `TODO.md`。PC 与 ESP32 继续使用 HTTP，不引入 WebSocket。
+## 使用流程
 
-## 验证
+1. 安装或解压 Windows 桌面端，并以管理员权限启动 Solis Monitor。
+2. 全新设备启动后会开放 `Solis-Monitor-xxxx` 热点；手机连接后访问 `http://192.168.0.1/` 完成 Wi-Fi 配置。
+3. 设备联网后双击 GPIO21 开启发现，在桌面端设备向导中输入副屏显示的 6 位配对码。
+4. 配对成功后，副屏开始按秒刷新指标；后续可在桌面端调整显示、电源与天气设置，并通过“固件更新”页执行局域网 OTA。
 
-在 ESP-IDF 6.0.2 环境中运行可重复执行的主机验证：
+设备令牌由桌面端生成并自动同步，不需要用户查看或手工输入。详细操作及救援入口见[配网与配对文档](docs/PROVISIONING.md)。
+
+## 项目结构
+
+| 路径 | 职责 |
+| --- | --- |
+| `app/LibreHardwareMonitor/` | Windows 控制中心、硬件采集、设备 API、通知与安装发布输入 |
+| `firmware/main/` | ESP32-S3 启动入口和主循环 |
+| `firmware/components/` | 网络、协议、设备控制、OTA、显示、UI 与板级模块 |
+| `firmware/test_apps/unit/` | 固件单元测试工程 |
+| `tools/`、`app/tests/` | 资源生成、结构检查和桌面端冒烟测试 |
+| `reference/` | 原理图、引脚、硬件参数与显示素材 |
+| `docs/` | 需求、协议、配网、测试、桌面端、固件和运维文档 |
+
+## 构建与验证
+
+在 .NET 10、Python 3.12 和 ESP-IDF 6.0.2 环境中运行统一验证：
 
 ```powershell
 pwsh -NoProfile -File .\tools\verify.ps1
 ```
 
-该命令会依次还原、测试并构建 Windows 解决方案，再运行 Python 检查、使用独立配置构建固件并报告大小；正式固件必须能够装入任一 `0x3E0000` OTA 分区。它不会刷写 COM4，也不会修改防火墙。分区迁移完成后，日常正式升级由桌面端“固件更新”页通过局域网执行；串口只保留为首次迁移和救援入口。
+脚本会还原、测试并构建 Windows 解决方案，运行 Python 检查，并使用独立配置构建固件和报告镜像大小；它不会刷写设备或修改 Windows 防火墙。正式固件必须能够装入任一 `0x3E0000` OTA 分区。
+
+更具体的入口：
+
+- [Windows 桌面端构建、配置与发布](docs/DESKTOP_APP.md)
+- [ESP32-S3 固件构建、分区与烧录](docs/FIRMWARE.md)
+- [通信协议与认证边界](docs/PROTOCOL.md)
+- [完整测试和实机验收](docs/TESTING.md)
+
+## 文档导航
+
+| 文档 | 内容 |
+| --- | --- |
+| [需求基线](docs/REQUIREMENTS.md) | 范围、角色、功能与非功能需求 |
+| [总体设计](DESIGN.md) | 系统架构、数据流与关键约束 |
+| [架构决策](docs/DECISIONS.md) | 已采用方案、未采用方案和复审条件 |
+| [Windows 桌面端](docs/DESKTOP_APP.md) | 控制中心、设备 API、安装与通知 |
+| [固件](docs/FIRMWARE.md) | 硬件目标、构建、分区和 OTA |
+| [配网与配对](docs/PROVISIONING.md) | AP Portal、发现、配对和救援入口 |
+| [Codex 指标](docs/CODEX_METRICS.md) | 本地任务解析、额度与脱敏边界 |
+| [天气](docs/WEATHER.md) | 本地密钥、采集、刷新和失败回退 |
+| [测试](docs/TESTING.md) | 自动化检查、实机验证和发布门禁 |
 
 ## 许可证
 
