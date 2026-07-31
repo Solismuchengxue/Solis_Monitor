@@ -1,0 +1,118 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <Platforms>x64</Platforms>
+    <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
+    <AssemblyName>SolisMonitor</AssemblyName>
+    <AssemblyTitle>Solis Monitor</AssemblyTitle>
+    <Product>Solis Monitor</Product>
+    <RootNamespace>LibreHardwareMonitor</RootNamespace>
+    <Copyright>LibreHardwareMonitor</Copyright>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <ApplicationIcon>Resources\icon.ico</ApplicationIcon>
+    <ApplicationManifest>Resources\app.net10.manifest</ApplicationManifest>
+    <ApplicationHighDpiMode>SystemAware</ApplicationHighDpiMode>
+    <StartupObject>LibreHardwareMonitor.Program</StartupObject>
+    <UseWindowsForms>true</UseWindowsForms>
+    <UseWPF>true</UseWPF>
+    <OutputPath>..\bin\$(Configuration)\</OutputPath>
+	  <LangVersion>latest</LangVersion>
+    <GenerateResourceUsePreserializedResources>true</GenerateResourceUsePreserializedResources>
+    <NoWarn>$(NoWarn);WFO1000;NU1702</NoWarn>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <DebugType>full</DebugType>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <DebugType>none</DebugType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="OxyPlot.Core" Version="2.2.0" />
+    <PackageReference Include="OxyPlot.WindowsForms" Version="2.2.0" />
+    <PackageReference Include="H.NotifyIcon.Wpf" Version="2.4.1" />
+    <PackageReference Include="System.Management" Version="10.0.3" />
+    <PackageReference Include="TaskScheduler" Version="2.12.2" />
+    <PackageReference Include="WPF-UI" Version="4.3.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="UI\AboutBox.Designer.cs">
+      <DependentUpon>AboutBox.cs</DependentUpon>
+    </Compile>
+    <Compile Update="UI\AuthForm.Designer.cs">
+      <DependentUpon>AuthForm.cs</DependentUpon>
+    </Compile>
+    <Compile Update="UI\MainForm.Designer.cs">
+      <DependentUpon>MainForm.cs</DependentUpon>
+    </Compile>
+    <Compile Update="UI\ParameterForm.Designer.cs">
+      <DependentUpon>ParameterForm.cs</DependentUpon>
+    </Compile>
+    <Compile Update="UI\InterfacePortForm.Designer.cs">
+      <DependentUpon>InterfacePortForm.cs</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Update="UI\AboutBox.resx">
+      <DependentUpon>AboutBox.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Update="UI\AuthForm.resx">
+      <DependentUpon>AuthForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Update="UI\MainForm.resx">
+      <DependentUpon>MainForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Update="UI\ParameterForm.resx">
+      <DependentUpon>ParameterForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Update="UI\InterfacePortForm.resx">
+      <DependentUpon>InterfacePortForm.cs</DependentUpon>
+    </EmbeddedResource>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Aga.Controls\Aga.Controls.csproj" />
+    <ProjectReference Include="..\LibreHardwareMonitorLib\LibreHardwareMonitorLib.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\**" Exclude="Resources\icon.ico" />
+    <Resource Include="Resources\icon.ico" />
+    <None Include="Resources\app.manifest" />
+    <None Include="Resources\app.net10.manifest" />
+  </ItemGroup>
+
+  <Target Name="CopyNotificationHost"
+          AfterTargets="Build"
+          Condition="'$(TargetFramework)' == 'net10.0-windows' and '$(Platform)' == 'x64'">
+    <MSBuild Projects="$(MSBuildThisFileDirectory)..\SolisMonitor.NotificationHost\SolisMonitor.NotificationHost.csproj"
+             Targets="Build"
+             Properties="Configuration=$(Configuration);TargetFramework=net10.0-windows10.0.19041.0;RuntimeIdentifier=win-x64;Platform=x64" />
+    <ItemGroup>
+      <NotificationHostFiles Include="$(MSBuildThisFileDirectory)..\SolisMonitor.NotificationHost\bin\x64\$(Configuration)\net10.0-windows10.0.19041.0\win-x64\**\*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(NotificationHostFiles)"
+          DestinationFiles="@(NotificationHostFiles->'$(OutDir)NotificationHost\%(RecursiveDir)%(Filename)%(Extension)')" />
+  </Target>
+
+  <Target Name="PublishNotificationHost"
+          AfterTargets="Publish"
+          Condition="'$(TargetFramework)' == 'net10.0-windows' and '$(Platform)' == 'x64'">
+    <PropertyGroup>
+      <NotificationHostPublishDir>$([System.IO.Path]::GetFullPath('$(IntermediateOutputPath)NotificationHostPublish\'))</NotificationHostPublishDir>
+    </PropertyGroup>
+    <MSBuild Projects="$(MSBuildThisFileDirectory)..\SolisMonitor.NotificationHost\SolisMonitor.NotificationHost.csproj"
+             Targets="Publish"
+             Properties="Configuration=$(Configuration);TargetFramework=net10.0-windows10.0.19041.0;RuntimeIdentifier=win-x64;Platform=x64;PublishDir=$(NotificationHostPublishDir)" />
+    <ItemGroup>
+      <PublishedNotificationHostFiles Include="$(NotificationHostPublishDir)**\*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(PublishedNotificationHostFiles)"
+          DestinationFiles="@(PublishedNotificationHostFiles->'$(PublishDir)NotificationHost\%(RecursiveDir)%(Filename)%(Extension)')" />
+  </Target>
+</Project>

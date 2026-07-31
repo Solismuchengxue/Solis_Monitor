@@ -1,0 +1,9 @@
+* text=auto
+
+# Binary design and UI assets must never use system text converters.
+*.pdf binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ttf binary

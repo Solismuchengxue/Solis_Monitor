@@ -1,0 +1,4 @@
+dependencies:
+  espressif/esp_lcd_nt35510:
+    version: 1.0.0
+  esp-idf-lib/dht: ^1.2.0

@@ -1,0 +1,226 @@
+<Window x:Class="LibreHardwareMonitor.UI.WpfViews.SolisDeviceSetupWizardWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="设备向导"
+        Width="760"
+        Height="580"
+        MinWidth="700"
+        MinHeight="540"
+        WindowStartupLocation="CenterOwner"
+        Background="#101521"
+        Foreground="#F5F8FC"
+        FontFamily="Microsoft YaHei UI">
+    <Window.Resources>
+        <Style x:Key="ActionButtonStyle" TargetType="Button">
+            <Setter Property="Height" Value="44" />
+            <Setter Property="MinWidth" Value="132" />
+            <Setter Property="Padding" Value="20,0" />
+            <Setter Property="FontSize" Value="15" />
+            <Setter Property="Foreground" Value="#F5F8FC" />
+            <Setter Property="Background" Value="#172737" />
+            <Setter Property="BorderBrush" Value="#4B6278" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Cursor" Value="Hand" />
+        </Style>
+        <Style x:Key="PrimaryButtonStyle"
+               TargetType="Button"
+               BasedOn="{StaticResource ActionButtonStyle}">
+            <Setter Property="Background" Value="#168DE2" />
+            <Setter Property="BorderBrush" Value="#2CA4F5" />
+        </Style>
+        <Style x:Key="ChoiceButtonStyle"
+               TargetType="Button"
+               BasedOn="{StaticResource ActionButtonStyle}">
+            <Setter Property="Height" Value="112" />
+            <Setter Property="HorizontalContentAlignment" Value="Left" />
+            <Setter Property="Padding" Value="22,16" />
+        </Style>
+    </Window.Resources>
+
+    <Grid Margin="30">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="20" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="18" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <StackPanel>
+            <TextBlock FontSize="30"
+                       FontWeight="Bold"
+                       Text="设备向导" />
+            <TextBlock x:Name="SubtitleText"
+                       Margin="0,5,0,0"
+                       FontSize="14"
+                       Foreground="#A4AFBD"
+                       Text="配置 Wi-Fi，发现并安全配对副屏。" />
+        </StackPanel>
+
+        <Grid Grid.Row="2">
+            <Grid x:Name="ChoicePage">
+                <Border Padding="22"
+                        Background="#111F2C"
+                        BorderBrush="#2A3B4D"
+                        BorderThickness="1"
+                        CornerRadius="12">
+                    <StackPanel VerticalAlignment="Center">
+                        <Button Style="{StaticResource ChoiceButtonStyle}"
+                                Click="DiscoverButton_Click">
+                            <StackPanel>
+                                <TextBlock FontSize="19"
+                                           FontWeight="SemiBold"
+                                           Text="副屏已连接 Wi-Fi" />
+                                <TextBlock Margin="0,8,0,0"
+                                           FontSize="13"
+                                           Foreground="#A4AFBD"
+                                           Text="让副屏双击 GPIO21 开启发现，再从局域网中完成配对。" />
+                            </StackPanel>
+                        </Button>
+                        <Button Margin="0,16,0,0"
+                                Style="{StaticResource ChoiceButtonStyle}"
+                                Click="ProvisionButton_Click">
+                            <StackPanel>
+                                <TextBlock FontSize="19"
+                                           FontWeight="SemiBold"
+                                           Text="配置或更换 Wi-Fi" />
+                                <TextBlock Margin="0,8,0,0"
+                                           FontSize="13"
+                                           Foreground="#A4AFBD"
+                                           Text="通过副屏 AP 配网页面保存 Wi-Fi，然后返回完成发现与配对。" />
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <Grid x:Name="DiscoveryPage" Visibility="Collapsed">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="14" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+
+                <Border Padding="16,12"
+                        Background="#172737"
+                        BorderBrush="#2A3B4D"
+                        BorderThickness="1"
+                        CornerRadius="8">
+                    <TextBlock x:Name="DiscoveryStatusText"
+                               TextWrapping="Wrap"
+                               Foreground="#A4AFBD"
+                               Text="正在准备扫描副屏……" />
+                </Border>
+
+                <Border Grid.Row="2"
+                        Padding="14"
+                        Background="#111F2C"
+                        BorderBrush="#2A3B4D"
+                        BorderThickness="1"
+                        CornerRadius="12">
+                    <ListBox x:Name="DeviceList"
+                             Background="Transparent"
+                             BorderThickness="0"
+                             Foreground="#F5F8FC"
+                             SelectionChanged="DeviceList_SelectionChanged">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <Border Margin="0,0,0,8"
+                                        Padding="14,10"
+                                        Background="#172737"
+                                        BorderBrush="#2A3B4D"
+                                        BorderThickness="1"
+                                        CornerRadius="8">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel>
+                                            <TextBlock FontSize="16"
+                                                       FontWeight="SemiBold"
+                                                       Text="{Binding HostName}" />
+                                            <TextBlock Margin="0,4,0,0"
+                                                       Foreground="#A4AFBD">
+                                                <Run Text="{Binding IpAddress}" />
+                                                <Run Text="  ·  固件 " />
+                                                <Run Text="{Binding FirmwareVersion}" />
+                                            </TextBlock>
+                                        </StackPanel>
+                                        <TextBlock Grid.Column="1"
+                                                   Margin="16,0,0,0"
+                                                   VerticalAlignment="Center"
+                                                   Foreground="#3ECF8E"
+                                                   Text="发现模式" />
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </Border>
+            </Grid>
+
+            <Grid x:Name="ProvisioningPage" Visibility="Collapsed">
+                <Border Padding="24"
+                        Background="#111F2C"
+                        BorderBrush="#2A3B4D"
+                        BorderThickness="1"
+                        CornerRadius="12">
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock FontSize="20"
+                                   FontWeight="SemiBold"
+                                   Text="通过副屏 AP 配置 Wi-Fi" />
+                        <TextBlock Margin="0,18,0,0"
+                                   FontSize="15"
+                                   LineHeight="28"
+                                   TextWrapping="Wrap"
+                                   Foreground="#D6DFE8"
+                                   Text="1. 长按副屏 GPIO21 约 5 秒进入 AP 配网。&#x0a;2. 手机连接 Solis-Monitor-xxxx 热点。&#x0a;3. 关闭手机移动数据，打开 http://192.168.0.1/。&#x0a;4. 扫描并保存 Wi-Fi，等待副屏恢复联网。&#x0a;5. 返回本向导，继续发现并输入 6 位配对码。" />
+                        <Border Margin="0,20,0,0"
+                                Padding="14,11"
+                                Background="#172737"
+                                BorderBrush="#2A3B4D"
+                                BorderThickness="1"
+                                CornerRadius="8">
+                            <TextBlock Foreground="#A4AFBD"
+                                       Text="向导已暂停副屏离线通知 10 分钟。" />
+                        </Border>
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </Grid>
+
+        <Grid Grid.Row="4">
+            <Button x:Name="BackButton"
+                    HorizontalAlignment="Left"
+                    Style="{StaticResource ActionButtonStyle}"
+                    Visibility="Collapsed"
+                    Click="BackButton_Click"
+                    Content="返回" />
+            <StackPanel HorizontalAlignment="Right" Orientation="Horizontal">
+                <Button Style="{StaticResource ActionButtonStyle}"
+                        IsCancel="True"
+                        Content="关闭" />
+                <Button x:Name="ScanButton"
+                        Margin="12,0,0,0"
+                        Style="{StaticResource ActionButtonStyle}"
+                        Visibility="Collapsed"
+                        Click="ScanButton_Click"
+                        Content="发现设备" />
+                <Button x:Name="PairButton"
+                        Margin="12,0,0,0"
+                        Style="{StaticResource PrimaryButtonStyle}"
+                        Visibility="Collapsed"
+                        IsEnabled="False"
+                        Click="PairButton_Click"
+                        Content="连接" />
+                <Button x:Name="ContinueButton"
+                        Margin="12,0,0,0"
+                        Style="{StaticResource PrimaryButtonStyle}"
+                        Visibility="Collapsed"
+                        Click="ContinueButton_Click"
+                        Content="继续发现" />
+            </StackPanel>
+        </Grid>
+    </Grid>
+</Window>

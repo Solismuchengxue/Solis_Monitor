@@ -1,0 +1,16 @@
+#pragma once
+
+#define BOARD_LCD_DC 16
+#define BOARD_LCD_CS 17
+#define BOARD_LCD_WR 18
+#define BOARD_LCD_RD 19
+#define BOARD_LCD_RST 20
+#define BOARD_BUTTON 21
+#define BOARD_BACKLIGHT 38
+#define BOARD_DHT11 47
+#define BOARD_LCD_PCLK_HZ 8000000
+#define BOARD_LCD_SWAP_XY 1
+#define BOARD_LCD_MIRROR_X 1
+#define BOARD_LCD_MIRROR_Y 0
+#define BOARD_LCD_BGR 0
+#define BOARD_LCD_SWAP_COLOR_BYTES 1
