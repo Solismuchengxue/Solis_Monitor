@@ -91,6 +91,172 @@ static void CodexWeeklyUsageUsesLocalSessionEventsImmediately()
     }
 }
 
+static void CodexWeeklyUsageIgnoresSubagentSessions()
+{
+    string root = Path.Combine(
+        Path.GetTempPath(),
+        $"SolisMonitor.WeeklySubagents-{Guid.NewGuid():N}");
+    DateTimeOffset nextReset = new(2026, 8, 8, 11, 37, 0,
+        TimeZoneInfo.Local.GetUtcOffset(new DateTime(2026, 8, 8, 11, 37, 0)));
+    DateTimeOffset periodStart = nextReset.AddDays(-7);
+
+    try
+    {
+        string directory = Path.Combine(root, "sessions", "2026", "08", "01");
+        Directory.CreateDirectory(directory);
+        string mainPath = Path.Combine(directory, "rollout-main.jsonl");
+        File.WriteAllLines(mainPath,
+        [
+            JsonSerializer.Serialize(new
+            {
+                type = "session_meta",
+                payload = new { id = "main", cwd = "F:\\Projects\\Main", source = "vscode" }
+            }),
+            CreateCodexTokenCount(periodStart.AddMinutes(1), 10, 100, 1, 10080,
+                nextReset.ToUnixTimeSeconds(), totalTokens: 100_000)
+        ]);
+
+        string subagentPath = Path.Combine(directory, "rollout-subagent.jsonl");
+        File.WriteAllLines(subagentPath,
+        [
+            JsonSerializer.Serialize(new
+            {
+                type = "session_meta",
+                payload = new
+                {
+                    id = "subagent",
+                    cwd = "F:\\Projects\\Main",
+                    source = new { subagent = new { } }
+                }
+            }),
+            CreateCodexTokenCount(periodStart.AddMinutes(2), 10, 100, 2, 10080,
+                nextReset.ToUnixTimeSeconds(), totalTokens: 900_000)
+        ]);
+        File.SetLastWriteTimeUtc(mainPath, periodStart.AddMinutes(1).UtcDateTime);
+        File.SetLastWriteTimeUtc(subagentPath, periodStart.AddMinutes(2).UtcDateTime);
+
+        var reader = new CodexLocalWeeklyUsageReader(root);
+        string resetText = nextReset.ToLocalTime().ToString(
+            "MM-dd HH:mm", CultureInfo.InvariantCulture);
+        Near(100_000, reader.Read(resetText, periodStart.AddMinutes(3)),
+            "子代理任务不应计入账户周使用 Token");
+    }
+    finally
+    {
+        if (Directory.Exists(root))
+            Directory.Delete(root, true);
+    }
+}
+
+static void CodexWeeklyUsageRemovesMissingSessions()
+{
+    string root = Path.Combine(
+        Path.GetTempPath(),
+        $"SolisMonitor.WeeklyRemoved-{Guid.NewGuid():N}");
+    DateTimeOffset nextReset = new(2026, 8, 8, 11, 37, 0,
+        TimeZoneInfo.Local.GetUtcOffset(new DateTime(2026, 8, 8, 11, 37, 0)));
+    DateTimeOffset periodStart = nextReset.AddDays(-7);
+
+    try
+    {
+        string directory = Path.Combine(root, "sessions", "2026", "08", "01");
+        Directory.CreateDirectory(directory);
+        string path = Path.Combine(directory, "rollout-moved.jsonl");
+        File.WriteAllLines(path,
+        [
+            JsonSerializer.Serialize(new
+            {
+                type = "session_meta",
+                payload = new { id = "moved", cwd = "F:\\Projects\\Moved", source = "vscode" }
+            }),
+            CreateCodexTokenCount(periodStart.AddMinutes(1), 10, 100, 1, 10080,
+                nextReset.ToUnixTimeSeconds(), totalTokens: 200_000)
+        ]);
+        File.SetLastWriteTimeUtc(path, periodStart.AddMinutes(1).UtcDateTime);
+
+        var reader = new CodexLocalWeeklyUsageReader(root);
+        string resetText = nextReset.ToLocalTime().ToString(
+            "MM-dd HH:mm", CultureInfo.InvariantCulture);
+        Near(200_000, reader.Read(resetText, periodStart.AddMinutes(2)),
+            "初次读取本地周使用 Token 错误");
+
+        File.Delete(path);
+        Near(0, reader.Read(resetText, periodStart.AddMinutes(3)),
+            "已移走任务仍残留在周使用 Token 中");
+    }
+    finally
+    {
+        if (Directory.Exists(root))
+            Directory.Delete(root, true);
+    }
+}
+
+static void CodexWeeklyUsagePrefersAccountDelta()
+{
+    string root = Path.Combine(
+        Path.GetTempPath(),
+        $"SolisMonitor.WeeklyAccount-{Guid.NewGuid():N}");
+    string settingsDirectory = Path.Combine(root, "settings");
+    DateTimeOffset now = new(2026, 8, 2, 12, 0, 0, TimeSpan.Zero);
+    DateTimeOffset nextReset = now.AddDays(6);
+    string resetText = nextReset.ToLocalTime().ToString(
+        "MM-dd HH:mm", CultureInfo.InvariantCulture);
+
+    try
+    {
+        string directory = Path.Combine(root, "sessions", "2026", "08", "02");
+        Directory.CreateDirectory(directory);
+        string path = Path.Combine(directory, "rollout-main.jsonl");
+        File.WriteAllLines(path,
+        [
+            JsonSerializer.Serialize(new
+            {
+                type = "session_meta",
+                payload = new { id = "main", cwd = "F:\\Projects\\Main", source = "vscode" }
+            }),
+            CreateCodexTokenCount(now, 10, 100, 1, 10080,
+                nextReset.ToUnixTimeSeconds(), totalTokens: 900_000)
+        ]);
+        File.SetLastWriteTimeUtc(path, now.UtcDateTime);
+
+        var tracker = new CodexWeeklyUsageTracker(settingsDirectory);
+        Near(0, tracker.Update(1_000_000, resetText),
+            "账户周周期测试基线建立失败");
+        Func<long?> accountReader = () => 1_200_000;
+        System.Reflection.ConstructorInfo constructor =
+            typeof(CodexMetricsCollector).GetConstructor(
+                System.Reflection.BindingFlags.Instance |
+                System.Reflection.BindingFlags.NonPublic,
+                null,
+                [
+                    typeof(string),
+                    typeof(TimeSpan),
+                    typeof(Func<long?>),
+                    typeof(CodexWeeklyUsageTracker)
+                ],
+                null) ?? throw new InvalidOperationException("找不到 Codex 采集器测试构造函数");
+        var collector = (CodexMetricsCollector)constructor.Invoke(
+            [root, TimeSpan.FromMinutes(10), accountReader, tracker]);
+
+        CodexMetricsReading reading = collector.Read(now);
+        DateTime deadline = DateTime.UtcNow.AddSeconds(5);
+        while (reading.TotalTokens != 1_200_000 && DateTime.UtcNow < deadline)
+        {
+            Thread.Sleep(10);
+            reading = collector.Read(now);
+        }
+
+        Near(1_200_000, reading.TotalTokens, "账户累计 Token 后台读取未完成");
+        Near(200_000, reading.WeeklyUsedTokens,
+            "账户周期差值可用时不应被更大的本地估算覆盖");
+    }
+    finally
+    {
+        if (Directory.Exists(root))
+            Directory.Delete(root, true);
+    }
+}
+
 static void CodexLargeIrrelevantLinesDoNotInflateManagedAllocations()
 {
     string root = Path.Combine(Path.GetTempPath(), $"SolisMonitor.CodexAllocation-{Guid.NewGuid():N}");
