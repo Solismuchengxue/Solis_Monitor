@@ -4,7 +4,7 @@ Solis Monitor 是一套由 Windows 桌面控制中心与 ESP32-S3 副屏组成�
 
 项目覆盖需求、架构、跨端协议、设备配网与配对、安全控制、双分区 OTA、自动化测试和运维文档，形成从方案设计、软件实现到发布交付的完整工程闭环。
 
-[下载最新版本](https://github.com/Solismuchengxue/Solis_Monitor/releases/latest) · [总体设计](DESIGN.md) · [通信协议](docs/PROTOCOL.md) · [测试说明](docs/TESTING.md) · [MPL-2.0 许可证](LICENSE)
+[下载 v0.9.6 Beta 4](https://github.com/Solismuchengxue/Solis_Monitor/releases/tag/v0.9.6-beta.4) · [总体设计](DESIGN.md) · [通信协议](docs/PROTOCOL.md) · [测试说明](docs/TESTING.md) · [MPL-2.0 许可证](LICENSE)
 
 > **技术栈：** C# / .NET 10 / WPF · Libre Hardware Monitor · ESP-IDF 6.0.2 / C · ESP32-S3 · HTTP / JSON · NVS · 双分区 OTA
 
@@ -29,7 +29,8 @@ Solis Monitor 是一套由 Windows 桌面控制中心与 ESP32-S3 副屏组成�
 - **端到端方案与交付**：从[需求基线](docs/REQUIREMENTS.md)、[总体设计](DESIGN.md)和[架构决策](docs/DECISIONS.md)出发，协同落地 Windows 应用、嵌入式固件、设备接口、部署与验收资料。
 - **跨端系统集成**：Windows 端统一采集 CPU、GPU、内存、存储、网络、Codex 和天气指标，通过 schema 1 HTTP/JSON 协议发布完整快照；ESP32-S3 每秒拉取并事务性更新界面，异常数据不会覆盖最后有效状态。
 - **设备全生命周期管理**：实现 AP Web 配网、局域网发现、6 位码配对、Bearer Token 鉴权、亮度与夜间计划、远程诊断，以及带镜像校验、双槽切换和失败回滚的局域网 OTA。
-- **可验证、可维护**：桌面端冒烟测试、78 项固件单元测试和 20 项 Python 工具测试覆盖核心链路，并由 `tools/verify.ps1` 提供统一检查入口。
+- **后台可靠性与可诊断性**：隔离指标与天气采集中的可恢复异常，失败周期保留最后完整快照；运行时错误日志采用脱敏字段、五分钟限流和 512 KiB 有界轮换。
+- **可验证、可维护**：128 项桌面端冒烟测试、78 项固件单元测试和 20 项 Python 工具测试覆盖核心链路，并由 `tools/verify.ps1` 提供统一检查入口。
 
 ## 系统架构
 
@@ -58,14 +59,14 @@ PC 端是指标与设备管理的数据权威，副屏负责按秒拉取快照�
 
 ## 下载与运行
 
-当前公开版本为 [Solis Monitor v0.9.6 Beta 1](https://github.com/Solismuchengxue/Solis_Monitor/releases/tag/v0.9.6-beta.1)，包含 Windows 桌面端 `0.9.6` 和 ESP32-S3 固件 `0.1.5`。
+当前公开预览版本为 [Solis Monitor v0.9.6 Beta 4](https://github.com/Solismuchengxue/Solis_Monitor/releases/tag/v0.9.6-beta.4)，包含 Windows 桌面端 `0.9.6` 和 ESP32-S3 固件 `0.1.5`。
 
 | 文件 | 用途 |
 | --- | --- |
-| [Windows x64 安装包](https://github.com/Solismuchengxue/Solis_Monitor/releases/latest/download/SolisMonitor-0.9.6-win-x64-setup.exe) | 标准安装、开始菜单入口和可选桌面快捷方式 |
-| [Windows x64 便携版](https://github.com/Solismuchengxue/Solis_Monitor/releases/latest/download/SolisMonitor-0.9.6-win-x64-portable.zip) | 解压后运行 `SolisMonitor/SolisMonitor.exe` |
-| [ESP32-S3 OTA 固件](https://github.com/Solismuchengxue/Solis_Monitor/releases/latest/download/solis_monitor-0.1.5-esp32s3.bin) | 已完成双 OTA 分区迁移设备的局域网升级 |
-| [SHA-256 校验清单](https://github.com/Solismuchengxue/Solis_Monitor/releases/latest/download/SHA256SUMS.txt) | 校验下载文件完整性 |
+| [Windows x64 安装包](https://github.com/Solismuchengxue/Solis_Monitor/releases/download/v0.9.6-beta.4/SolisMonitor-0.9.6-win-x64-setup.exe) | 标准安装、开始菜单入口和可选桌面快捷方式 |
+| [Windows x64 便携版](https://github.com/Solismuchengxue/Solis_Monitor/releases/download/v0.9.6-beta.4/SolisMonitor-0.9.6-win-x64-portable.zip) | 解压后运行 `SolisMonitor/SolisMonitor.exe` |
+| [ESP32-S3 OTA 固件](https://github.com/Solismuchengxue/Solis_Monitor/releases/download/v0.9.6-beta.4/solis_monitor-0.1.5-esp32s3.bin) | 已完成双 OTA 分区迁移设备的局域网升级 |
+| [SHA-256 校验清单](https://github.com/Solismuchengxue/Solis_Monitor/releases/download/v0.9.6-beta.4/SHA256SUMS.txt) | 校验下载文件完整性 |
 
 Windows 端支持 Windows 10 1809 或更高版本的 x64 系统，需要 [.NET 10 Desktop Runtime x64](https://dotnet.microsoft.com/en-us/download/dotnet/10.0)；原生通知功能需要 [Windows App Runtime 2.3.1 x64](https://learn.microsoft.com/en-us/windows/apps/windows-app-sdk/downloads)。硬件传感器采集建议以管理员权限运行。
 
