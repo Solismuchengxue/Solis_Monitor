@@ -59,7 +59,7 @@ PC 端是指标与设备管理的数据权威，副屏负责按秒拉取快照�
 
 ## 下载与运行
 
-当前公开预览版本为 [Solis Monitor v0.9.6 Beta 4](https://github.com/Solismuchengxue/Solis_Monitor/releases/tag/v0.9.6-beta.4)，包含 Windows 桌面端 `0.9.6` 和 ESP32-S3 固件 `0.1.5`。
+当前 GitHub Latest 版本为 [Solis Monitor v0.9.6 Beta 4](https://github.com/Solismuchengxue/Solis_Monitor/releases/tag/v0.9.6-beta.4)，包含 Windows 桌面端 `0.9.6` 和 ESP32-S3 固件 `0.1.5`。
 
 | 文件 | 用途 |
 | --- | --- |
