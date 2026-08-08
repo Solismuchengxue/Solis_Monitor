@@ -181,7 +181,9 @@ public sealed class CodexMetricsCollector
 
     private void UpdateWeeklyUsedTokens()
     {
-        _weeklyUsedTokens = _accountWeeklyUsedTokens ?? _localWeeklyUsedTokens;
+        _weeklyUsedTokens = _accountWeeklyUsedTokens is > 0 || _localWeeklyUsedTokens is null
+            ? _accountWeeklyUsedTokens
+            : _localWeeklyUsedTokens;
     }
 
     private void Refresh()

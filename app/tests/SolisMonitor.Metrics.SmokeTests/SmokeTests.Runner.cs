@@ -94,6 +94,7 @@ internal static partial class SmokeTests
         ("Codex 周使用 Token 排除子代理任务", CodexWeeklyUsageIgnoresSubagentSessions),
         ("Codex 周使用 Token 清理已移走任务", CodexWeeklyUsageRemovesMissingSessions),
         ("Codex 周使用 Token 以账户周期差值为准", CodexWeeklyUsagePrefersAccountDelta),
+        ("Codex 账户周期差值为零时保留本地周 Token", CodexWeeklyUsageFallsBackToLocalWhenAccountDeltaIsZero),
         ("Codex 无关大行不会推高托管分配", CodexLargeIrrelevantLinesDoNotInflateManagedAllocations),
         ("Codex 脱敏内部格式样例", CodexSanitizedFixtureIsParsed),
         ("Codex 内部格式错误可诊断", CodexMalformedInternalFormatIsDiagnosed),

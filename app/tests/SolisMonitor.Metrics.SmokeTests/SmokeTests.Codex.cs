@@ -301,6 +301,72 @@ static void CodexWeeklyUsagePrefersAccountDelta()
     }
 }
 
+static void CodexWeeklyUsageFallsBackToLocalWhenAccountDeltaIsZero()
+{
+    string root = Path.Combine(
+        Path.GetTempPath(),
+        $"SolisMonitor.WeeklyAccountLag-{Guid.NewGuid():N}");
+    string settingsDirectory = Path.Combine(root, "settings");
+    DateTimeOffset now = new(2026, 8, 8, 4, 55, 0, TimeSpan.Zero);
+    DateTimeOffset nextReset = now.AddDays(7);
+    string resetText = nextReset.ToLocalTime().ToString(
+        "MM-dd HH:mm", CultureInfo.InvariantCulture);
+
+    try
+    {
+        string directory = Path.Combine(root, "sessions", "2026", "08", "08");
+        Directory.CreateDirectory(directory);
+        string path = Path.Combine(directory, "rollout-main.jsonl");
+        File.WriteAllLines(path,
+        [
+            JsonSerializer.Serialize(new
+            {
+                type = "session_meta",
+                payload = new { id = "main", cwd = "F:\\Projects\\Main", source = "vscode" }
+            }),
+            CreateCodexTokenCount(now, 10, 100, 5, 10080,
+                nextReset.ToUnixTimeSeconds(), totalTokens: 63_067_483)
+        ]);
+        File.SetLastWriteTimeUtc(path, now.UtcDateTime);
+
+        var tracker = new CodexWeeklyUsageTracker(settingsDirectory);
+        Near(0, tracker.Update(10_451_031_927, resetText),
+            "账户周周期测试基线建立失败");
+        Func<long?> accountReader = () => 10_451_031_927;
+        System.Reflection.ConstructorInfo constructor =
+            typeof(CodexMetricsCollector).GetConstructor(
+                System.Reflection.BindingFlags.Instance |
+                System.Reflection.BindingFlags.NonPublic,
+                null,
+                [
+                    typeof(string),
+                    typeof(TimeSpan),
+                    typeof(Func<long?>),
+                    typeof(CodexWeeklyUsageTracker)
+                ],
+                null) ?? throw new InvalidOperationException("找不到 Codex 采集器测试构造函数");
+        var collector = (CodexMetricsCollector)constructor.Invoke(
+            [root, TimeSpan.FromMinutes(10), accountReader, tracker]);
+
+        CodexMetricsReading reading = collector.Read(now);
+        DateTime deadline = DateTime.UtcNow.AddSeconds(5);
+        while (reading.TotalTokens != 10_451_031_927 && DateTime.UtcNow < deadline)
+        {
+            Thread.Sleep(10);
+            reading = collector.Read(now);
+        }
+
+        Near(10_451_031_927, reading.TotalTokens, "账户累计 Token 后台读取未完成");
+        Near(63_067_483, reading.WeeklyUsedTokens,
+            "滞后的零账户差值不应覆盖本地有效周 Token");
+    }
+    finally
+    {
+        if (Directory.Exists(root))
+            Directory.Delete(root, true);
+    }
+}
+
 static void CodexLargeIrrelevantLinesDoNotInflateManagedAllocations()
 {
     string root = Path.Combine(Path.GetTempPath(), $"SolisMonitor.CodexAllocation-{Guid.NewGuid():N}");
