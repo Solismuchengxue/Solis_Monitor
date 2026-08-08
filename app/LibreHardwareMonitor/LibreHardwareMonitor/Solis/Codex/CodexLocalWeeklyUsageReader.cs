@@ -136,7 +136,8 @@ public sealed class CodexLocalWeeklyUsageReader
         {
             using JsonDocument document = JsonDocument.Parse(line);
             JsonElement root = document.RootElement;
-            if (!root.TryGetProperty("timestamp", out JsonElement timestampElement) ||
+            if (root.ValueKind != JsonValueKind.Object ||
+                !root.TryGetProperty("timestamp", out JsonElement timestampElement) ||
                 timestampElement.ValueKind != JsonValueKind.String ||
                 !DateTimeOffset.TryParse(
                     timestampElement.GetString(),
@@ -146,10 +147,14 @@ public sealed class CodexLocalWeeklyUsageReader
                 !root.TryGetProperty("payload", out JsonElement payload) ||
                 payload.ValueKind != JsonValueKind.Object ||
                 !payload.TryGetProperty("type", out JsonElement type) ||
+                type.ValueKind != JsonValueKind.String ||
                 type.GetString() != "token_count" ||
                 !payload.TryGetProperty("info", out JsonElement info) ||
+                info.ValueKind != JsonValueKind.Object ||
                 !info.TryGetProperty("total_token_usage", out JsonElement usage) ||
+                usage.ValueKind != JsonValueKind.Object ||
                 !usage.TryGetProperty("total_tokens", out JsonElement total) ||
+                total.ValueKind != JsonValueKind.Number ||
                 !total.TryGetInt64(out totalTokens) ||
                 totalTokens < 0)
             {

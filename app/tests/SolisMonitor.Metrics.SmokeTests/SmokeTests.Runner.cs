@@ -90,6 +90,7 @@ internal static partial class SmokeTests
         ("Codex 额度映射与重置时间兼容", CodexQuotaMappingAndResetFormatsAreStable),
         ("Codex 周使用 Token 按主额度周期持久化", CodexWeeklyUsageFollowsMainQuotaCycle),
         ("Codex 周使用 Token 实时汇总本地任务", CodexWeeklyUsageUsesLocalSessionEventsImmediately),
+        ("Codex 周使用 Token 忽略不完整事件", CodexWeeklyUsageIgnoresIncompleteTokenEvents),
         ("Codex 周使用 Token 排除子代理任务", CodexWeeklyUsageIgnoresSubagentSessions),
         ("Codex 周使用 Token 清理已移走任务", CodexWeeklyUsageRemovesMissingSessions),
         ("Codex 周使用 Token 以账户周期差值为准", CodexWeeklyUsagePrefersAccountDelta),

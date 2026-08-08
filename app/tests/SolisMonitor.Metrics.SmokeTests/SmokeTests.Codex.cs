@@ -91,6 +91,50 @@ static void CodexWeeklyUsageUsesLocalSessionEventsImmediately()
     }
 }
 
+static void CodexWeeklyUsageIgnoresIncompleteTokenEvents()
+{
+    string root = Path.Combine(
+        Path.GetTempPath(),
+        $"SolisMonitor.IncompleteWeeklyTokens-{Guid.NewGuid():N}");
+    DateTimeOffset nextReset = new(2026, 8, 8, 11, 37, 0,
+        TimeZoneInfo.Local.GetUtcOffset(new DateTime(2026, 8, 8, 11, 37, 0)));
+    DateTimeOffset periodStart = nextReset.AddDays(-7);
+
+    try
+    {
+        string directory = Path.Combine(root, "sessions", "2026", "08", "08");
+        Directory.CreateDirectory(directory);
+        string path = Path.Combine(directory, "rollout-incomplete.jsonl");
+        File.WriteAllLines(path,
+        [
+            JsonSerializer.Serialize(new
+            {
+                type = "session_meta",
+                payload = new { id = "incomplete", cwd = "F:\\Projects\\Incomplete", source = "vscode" }
+            }),
+            JsonSerializer.Serialize(new
+            {
+                timestamp = periodStart.AddMinutes(1),
+                payload = new { type = "token_count", info = (object?)null }
+            }),
+            CreateCodexTokenCount(periodStart.AddMinutes(2), 10, 100, 1, 10080,
+                nextReset.ToUnixTimeSeconds(), totalTokens: 100_000)
+        ]);
+        File.SetLastWriteTimeUtc(path, periodStart.AddMinutes(2).UtcDateTime);
+
+        var reader = new CodexLocalWeeklyUsageReader(root);
+        string resetText = nextReset.ToLocalTime().ToString(
+            "MM-dd HH:mm", CultureInfo.InvariantCulture);
+        Near(100_000, reader.Read(resetText, periodStart.AddMinutes(3)),
+            "不完整 token_count 记录不应终止周 Token 统计");
+    }
+    finally
+    {
+        if (Directory.Exists(root))
+            Directory.Delete(root, true);
+    }
+}
+
 static void CodexWeeklyUsageIgnoresSubagentSessions()
 {
     string root = Path.Combine(
