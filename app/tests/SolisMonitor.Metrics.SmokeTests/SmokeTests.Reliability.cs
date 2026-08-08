@@ -222,6 +222,8 @@ static void RuntimeErrorLogRateLimitsDuplicateFailures()
     {
         var log = new RuntimeErrorLog(root, maximumFileBytes: 512,
             minimumInterval: TimeSpan.FromMinutes(5));
+        Equal(Path.Combine(root, "logs", "runtime-errors.log"), log.LogPath,
+            "运行时错误日志没有写入 settings 的 logs 子目录");
         var failure = new BackgroundCollectionFailure(
             BackgroundCollectionModule.Metrics,
             typeof(InvalidOperationException).FullName!,
@@ -345,8 +347,8 @@ static void RuntimeErrorLogCapsInjectedMaximumFileBytes()
     string root = Path.Combine(Path.GetTempPath(), $"SolisMonitor.Log-{Guid.NewGuid():N}");
     try
     {
-        Directory.CreateDirectory(root);
-        string path = Path.Combine(root, "runtime-errors.log");
+        string path = Path.Combine(root, "logs", "runtime-errors.log");
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
         File.WriteAllBytes(path, new byte[524288]);
         var log = new RuntimeErrorLog(root, maximumFileBytes: 600000);
 
@@ -371,8 +373,8 @@ static void RuntimeErrorLogDiscardsPrebuiltOversizedCurrentFile()
     string root = Path.Combine(Path.GetTempPath(), $"SolisMonitor.Log-{Guid.NewGuid():N}");
     try
     {
-        Directory.CreateDirectory(root);
-        string path = Path.Combine(root, "runtime-errors.log");
+        string path = Path.Combine(root, "logs", "runtime-errors.log");
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
         File.WriteAllBytes(path, new byte[524289]);
         var log = new RuntimeErrorLog(root, maximumFileBytes: 512);
 

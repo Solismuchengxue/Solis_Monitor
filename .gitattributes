@@ -7,3 +7,5 @@
 *.jpeg binary
 *.gif binary
 *.ttf binary
+firmware/components/network_client/portal.html text eol=lf
+firmware/components/network_client/portal.html.gz binary

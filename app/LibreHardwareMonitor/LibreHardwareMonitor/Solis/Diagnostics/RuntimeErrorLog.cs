@@ -25,7 +25,7 @@ public sealed class RuntimeErrorLog
         _settingsDirectory = settingsDirectory ?? throw new ArgumentNullException(nameof(settingsDirectory));
         _maximumFileBytes = Math.Clamp(maximumFileBytes, 0, MaximumFileBytes);
         _minimumInterval = minimumInterval ?? TimeSpan.FromMinutes(5);
-        LogPath = Path.Combine(_settingsDirectory, "runtime-errors.log");
+        LogPath = Path.Combine(_settingsDirectory, "logs", "runtime-errors.log");
     }
 
     public string LogPath { get; }
@@ -59,7 +59,7 @@ public sealed class RuntimeErrorLog
         string line = $"{now.ToUniversalTime():O} {module} {exceptionType} {unchecked((uint)failure.HResult):X8}\n";
         int lineLength = Encoding.ASCII.GetByteCount(line);
 
-        Directory.CreateDirectory(_settingsDirectory);
+        Directory.CreateDirectory(Path.GetDirectoryName(LogPath)!);
         DeleteIfOversized(LogPath);
         DeleteIfOversized(LogPath + ".1");
         if (lineLength > _maximumFileBytes)
