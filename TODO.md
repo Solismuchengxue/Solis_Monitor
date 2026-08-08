@@ -15,12 +15,39 @@
 
 ## 当前基线
 
-- 分支：`main`
+- 基线分支：`main`；当前实施分支：`codex/background-collection-reliability`
 - 当前可用版本：PC `0.9.6`，固件 `0.1.5`
 - 当前功能基线：PC 指标、Codex 指标、天气、DHT11、AP/STA WebUI、6 位码配对、
   设备控制、本地 OTA、通知和安装包已形成可用闭环。
-- 当前任务：稳定基线维护；暂无进行中的开发项
+- 当前任务：`RUNTIME-002` 后台采集可靠性加固
 - 详细审计和判断依据：[`docs/REPOSITORY_REVIEW.md`](docs/REPOSITORY_REVIEW.md)
+
+## 当前里程碑：后台采集可靠性加固
+
+### RUNTIME-002 隔离后台采集异常并建立有界日志
+
+状态：`[~]`
+
+范围：
+
+- 隔离指标与天气后台采集中的可恢复异常，保留最后一次完整有效值；
+- 建立脱敏、限流且有 512 KiB 硬上限的本地运行时错误日志；
+- 补强天气诊断恢复、Codex 会话元数据类型边界和运行时回归测试；
+- 完成全量验证和仓库内发布载荷核验后，再单独申请部署、推送和 Release 授权。
+
+实施计划：
+[`docs/superpowers/plans/2026-08-08-background-collection-reliability.md`](docs/superpowers/plans/2026-08-08-background-collection-reliability.md)
+
+当前进度（2026-08-08）：
+
+- `[x]` Task 1：增加后台采集异常保护器，提交 `b79a2de`；
+- `[x]` Task 2：增加有界脱敏运行时错误日志，提交 `11052e1`；
+- `[x]` Task 3：接入指标与天气定时器及诊断恢复，提交 `aa43289`，127/127 冒烟测试通过；
+- `[ ]` Task 4：补齐 Codex 会话元数据 JSON 类型边界；
+- `[ ]` Task 5：记录后台恢复、日志路径、脱敏和容量边界；
+- `[ ]` Task 6：执行全量验证、依赖漏洞审计并核验仓库内发布载荷。
+
+当前边界：Task 1–3 仅位于实施分支，尚未合并 `main`、推送、部署或更新 GitHub Release。
 
 ## 当前里程碑：仓库收敛
 
