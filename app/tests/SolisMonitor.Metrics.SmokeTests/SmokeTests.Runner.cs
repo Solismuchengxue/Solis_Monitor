@@ -108,6 +108,7 @@ internal static partial class SmokeTests
         ("Codex 周使用 Token 实时汇总本地任务", CodexWeeklyUsageUsesLocalSessionEventsImmediately),
         ("Codex 周使用 Token 忽略不完整事件", CodexWeeklyUsageIgnoresIncompleteTokenEvents),
         ("Codex 周使用 Token 排除子代理任务", CodexWeeklyUsageIgnoresSubagentSessions),
+        ("Codex 会话元数据类型异常不会终止采集", CodexWeeklyUsageIgnoresInvalidSessionMetadataKinds),
         ("Codex 周使用 Token 清理已移走任务", CodexWeeklyUsageRemovesMissingSessions),
         ("Codex 周使用 Token 以账户周期差值为准", CodexWeeklyUsagePrefersAccountDelta),
         ("Codex 账户周期差值为零时保留本地周 Token", CodexWeeklyUsageFallsBackToLocalWhenAccountDeltaIsZero),

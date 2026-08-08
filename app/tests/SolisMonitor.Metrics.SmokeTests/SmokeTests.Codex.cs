@@ -192,6 +192,46 @@ static void CodexWeeklyUsageIgnoresSubagentSessions()
     }
 }
 
+static void CodexWeeklyUsageIgnoresInvalidSessionMetadataKinds()
+{
+    string root = Path.Combine(
+        Path.GetTempPath(),
+        $"SolisMonitor.InvalidWeeklyMetadata-{Guid.NewGuid():N}");
+    DateTimeOffset nextReset = new(2026, 8, 8, 11, 37, 0,
+        TimeZoneInfo.Local.GetUtcOffset(new DateTime(2026, 8, 8, 11, 37, 0)));
+    DateTimeOffset periodStart = nextReset.AddDays(-7);
+
+    try
+    {
+        string directory = Path.Combine(root, "sessions", "2026", "08", "01");
+        Directory.CreateDirectory(directory);
+        string[] metadata = ["[]", "\"text\"", "null", "{\"type\":\"session_meta\",\"payload\":null}"];
+        for (int index = 0; index < metadata.Length; index++)
+        {
+            DateTimeOffset timestamp = periodStart.AddMinutes(index + 1);
+            string path = Path.Combine(directory, $"rollout-invalid-{index}.jsonl");
+            File.WriteAllLines(path,
+            [
+                metadata[index],
+                CreateCodexTokenCount(timestamp, 10, 100, index + 1, 10080,
+                    nextReset.ToUnixTimeSeconds(), totalTokens: (index + 1) * 100_000)
+            ]);
+            File.SetLastWriteTimeUtc(path, timestamp.UtcDateTime);
+        }
+
+        var reader = new CodexLocalWeeklyUsageReader(root);
+        string resetText = nextReset.ToLocalTime().ToString(
+            "MM-dd HH:mm", CultureInfo.InvariantCulture);
+        Near(1_000_000, reader.Read(resetText, periodStart.AddMinutes(5)),
+            "元数据类型异常不应终止有效 token_count 的周使用统计");
+    }
+    finally
+    {
+        if (Directory.Exists(root))
+            Directory.Delete(root, true);
+    }
+}
+
 static void CodexWeeklyUsageRemovesMissingSessions()
 {
     string root = Path.Combine(

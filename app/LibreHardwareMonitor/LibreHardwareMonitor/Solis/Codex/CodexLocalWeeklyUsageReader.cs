@@ -183,7 +183,9 @@ public sealed class CodexLocalWeeklyUsageReader
 
             using JsonDocument document = JsonDocument.Parse(line);
             JsonElement root = document.RootElement;
-            return root.TryGetProperty("payload", out JsonElement payload) &&
+            return root.ValueKind == JsonValueKind.Object &&
+                   root.TryGetProperty("payload", out JsonElement payload) &&
+                   payload.ValueKind == JsonValueKind.Object &&
                    payload.TryGetProperty("source", out JsonElement source) &&
                    source.ValueKind == JsonValueKind.Object &&
                    source.TryGetProperty("subagent", out _);
