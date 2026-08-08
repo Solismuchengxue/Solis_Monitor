@@ -1,5 +1,7 @@
 # Background Collection Reliability Implementation Plan
 
+> **历史状态（2026-08-08）：已执行完成。** Task 1–6 已实现、验证并合并至 `main`；发布基线 `808648b` 已完成 D 盘部署验收，并以 `v0.9.6-beta.4` 公开为 Pre-release。下方未勾选框保留原始执行计划语法，不代表当前待办；当前状态以根目录 `TODO.md` 为准。
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Prevent recoverable metrics and weather collection exceptions from terminating Solis Monitor while preserving the last complete snapshot, exposing recoverable diagnostics, and keeping sanitized error evidence within fixed disk and memory bounds.
