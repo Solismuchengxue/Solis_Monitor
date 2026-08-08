@@ -33,6 +33,153 @@ static void BackgroundCollectionGuardContinuesAfterFailure()
     Equal(1, successfulRuns, "恢复周期没有执行一次完整采集");
 }
 
+static void BackgroundCollectionGuardKeepsLastCompleteMetricsSnapshot()
+{
+    var store = new MetricsSnapshotStore();
+    store.Publish(
+        new NetworkThroughputReading(true, 12.5, 3.25, "wifi", "Wi-Fi", null),
+        new CodexMetricsReading(
+            true, "Solis_Monitor", 25, 12.5, 128, 4, null, null, null),
+        DateTimeOffset.FromUnixTimeSeconds(100));
+    SolisMetricsSnapshot initial = store.Current;
+    var guard = new BackgroundCollectionGuard((_, _) => { });
+
+    guard.Execute(
+        BackgroundCollectionModule.Metrics,
+        DateTimeOffset.FromUnixTimeSeconds(101),
+        () => throw new InvalidOperationException("second cycle failed"),
+        _ => { });
+
+    SolisMetricsSnapshot afterFailure = store.Current;
+    Equal(initial.Sequence, afterFailure.Sequence,
+        "失败指标周期改变了快照序号");
+    Equal(initial.Network.DownloadMbps.Value, afterFailure.Network.DownloadMbps.Value,
+        "失败指标周期改变了最后完整网络值");
+    Equal(initial.Codex.LastActiveTask, afterFailure.Codex.LastActiveTask,
+        "失败指标周期改变了最后完整 Codex 值");
+}
+
+static void ReplacedWeatherCollectorFailureDoesNotOverrideHealthyDiagnostics()
+{
+    string root = Path.Combine(Path.GetTempPath(), $"SolisMonitor.WeatherRace-{Guid.NewGuid():N}");
+    var handler = new BlockingFailureHttpMessageHandler();
+    HttpClient? attemptedClient = null;
+    HttpClient? replacementClient = null;
+    QWeatherMetricsCollector? attemptedCollector = null;
+    QWeatherMetricsCollector? replacementCollector = null;
+    SolisRuntime? runtime = null;
+    Task? update = null;
+    try
+    {
+        Directory.CreateDirectory(root);
+        attemptedClient = new HttpClient(handler);
+        replacementClient = new HttpClient(new ThrowingHttpMessageHandler());
+        attemptedCollector = CreateWeatherCollector(attemptedClient);
+        replacementCollector = CreateWeatherCollector(replacementClient);
+        runtime = CreateReliabilityRuntime(root);
+        QWeatherMetricsCollector original = ReplaceWeatherCollector(runtime, attemptedCollector);
+        original.Dispose();
+        SolisDiagnosticsMonitor diagnostics = GetRuntimeDiagnostics(runtime);
+        diagnostics.ObserveWeather(
+            HealthyWeatherReading(), DateTimeOffset.Parse("2026-08-08T12:00:00Z"));
+
+        update = Task.Run(() => InvokeWeatherUpdate(runtime));
+        True(handler.Entered.Wait(TimeSpan.FromSeconds(5)), "旧天气采集没有进入可控失败点");
+        ReplaceWeatherCollector(runtime, replacementCollector);
+        diagnostics.ObserveWeather(
+            HealthyWeatherReading(), DateTimeOffset.Parse("2026-08-08T12:01:00Z"));
+        handler.Release.Set();
+        True(update.Wait(TimeSpan.FromSeconds(5)), "旧天气采集失败没有结束");
+
+        Equal(DiagnosticCheckState.Normal, runtime.Diagnostics.Weather.State,
+            "已替换 collector 的失败覆盖了新 collector 的健康诊断");
+    }
+    finally
+    {
+        handler.Release.Set();
+        update?.Wait(TimeSpan.FromSeconds(5));
+        runtime?.Dispose();
+        attemptedCollector?.Dispose();
+        replacementCollector?.Dispose();
+        attemptedClient?.Dispose();
+        replacementClient?.Dispose();
+        if (Directory.Exists(root)) Directory.Delete(root, true);
+    }
+}
+
+static void ClosingWeatherCollectorFailureDoesNotOverrideHealthyDiagnostics()
+{
+    string root = Path.Combine(Path.GetTempPath(), $"SolisMonitor.WeatherClosing-{Guid.NewGuid():N}");
+    var handler = new BlockingFailureHttpMessageHandler();
+    HttpClient? attemptedClient = null;
+    QWeatherMetricsCollector? attemptedCollector = null;
+    SolisRuntime? runtime = null;
+    Task? update = null;
+    try
+    {
+        Directory.CreateDirectory(root);
+        attemptedClient = new HttpClient(handler);
+        attemptedCollector = CreateWeatherCollector(attemptedClient);
+        runtime = CreateReliabilityRuntime(root);
+        QWeatherMetricsCollector original = ReplaceWeatherCollector(runtime, attemptedCollector);
+        original.Dispose();
+        SolisDiagnosticsMonitor diagnostics = GetRuntimeDiagnostics(runtime);
+        diagnostics.ObserveWeather(
+            HealthyWeatherReading(), DateTimeOffset.Parse("2026-08-08T12:00:00Z"));
+
+        update = Task.Run(() => InvokeWeatherUpdate(runtime));
+        True(handler.Entered.Wait(TimeSpan.FromSeconds(5)), "关闭中的天气采集没有进入可控失败点");
+        runtime.Dispose();
+        handler.Release.Set();
+        True(update.Wait(TimeSpan.FromSeconds(5)), "关闭中的天气采集失败没有结束");
+
+        Equal(DiagnosticCheckState.Normal, runtime.Diagnostics.Weather.State,
+            "关闭中的 collector 失败更新了天气诊断");
+    }
+    finally
+    {
+        handler.Release.Set();
+        update?.Wait(TimeSpan.FromSeconds(5));
+        runtime?.Dispose();
+        attemptedCollector?.Dispose();
+        attemptedClient?.Dispose();
+        if (Directory.Exists(root)) Directory.Delete(root, true);
+    }
+}
+
+static void CurrentWeatherCollectorFailureUpdatesDiagnostics()
+{
+    string root = Path.Combine(Path.GetTempPath(), $"SolisMonitor.WeatherFailure-{Guid.NewGuid():N}");
+    HttpClient? attemptedClient = null;
+    QWeatherMetricsCollector? attemptedCollector = null;
+    SolisRuntime? runtime = null;
+    try
+    {
+        Directory.CreateDirectory(root);
+        attemptedClient = new HttpClient(new ThrowingHttpMessageHandler());
+        attemptedCollector = CreateWeatherCollector(attemptedClient);
+        runtime = CreateReliabilityRuntime(root);
+        QWeatherMetricsCollector original = ReplaceWeatherCollector(runtime, attemptedCollector);
+        original.Dispose();
+        GetRuntimeDiagnostics(runtime).ObserveWeather(
+            HealthyWeatherReading(), DateTimeOffset.Parse("2026-08-08T12:00:00Z"));
+
+        InvokeWeatherUpdate(runtime);
+
+        Equal(DiagnosticCheckState.Fault, runtime.Diagnostics.Weather.State,
+            "当前 collector 的真实失败没有更新天气诊断");
+        Equal("BackgroundCollectionError", runtime.Diagnostics.Weather.ErrorCategory,
+            "当前 collector 的真实失败类别错误");
+    }
+    finally
+    {
+        runtime?.Dispose();
+        attemptedCollector?.Dispose();
+        attemptedClient?.Dispose();
+        if (Directory.Exists(root)) Directory.Delete(root, true);
+    }
+}
+
 static void BackgroundCollectionGuardPropagatesFatalFailures()
 {
     var guard = new BackgroundCollectionGuard((_, _) => { });
@@ -242,5 +389,77 @@ static void RuntimeErrorLogDiscardsPrebuiltOversizedCurrentFile()
     {
         if (Directory.Exists(root)) Directory.Delete(root, true);
     }
+}
+
+static SolisRuntime CreateReliabilityRuntime(string root)
+{
+    string codexRoot = Path.Combine(root, "codex");
+    Directory.CreateDirectory(codexRoot);
+    return new SolisRuntime(string.Empty, root, codexRoot, "127.0.0.1", 50123);
+}
+
+static QWeatherMetricsCollector CreateWeatherCollector(HttpClient client) =>
+    new(
+        new QWeatherSettings(
+            true,
+            "md3h2ew6qe.re.qweatherapi.com",
+            "test-secret",
+            "大连",
+            "101070201"),
+        client);
+
+static QWeatherMetricsCollector ReplaceWeatherCollector(
+    SolisRuntime runtime,
+    QWeatherMetricsCollector replacement)
+{
+    System.Reflection.FieldInfo field = typeof(SolisRuntime).GetField(
+        "_weatherMetricsCollector",
+        System.Reflection.BindingFlags.Instance |
+        System.Reflection.BindingFlags.NonPublic)!;
+    var previous = (QWeatherMetricsCollector)field.GetValue(runtime)!;
+    field.SetValue(runtime, replacement);
+    return previous;
+}
+
+static SolisDiagnosticsMonitor GetRuntimeDiagnostics(SolisRuntime runtime) =>
+    (SolisDiagnosticsMonitor)typeof(SolisRuntime).GetField(
+        "_diagnosticsMonitor",
+        System.Reflection.BindingFlags.Instance |
+        System.Reflection.BindingFlags.NonPublic)!.GetValue(runtime)!;
+
+static void InvokeWeatherUpdate(SolisRuntime runtime) =>
+    typeof(SolisRuntime).GetMethod(
+        "UpdateWeather",
+        System.Reflection.BindingFlags.Instance |
+        System.Reflection.BindingFlags.NonPublic)!.Invoke(runtime, new object?[] { null });
+
+static WeatherMetricsReading HealthyWeatherReading() =>
+    new(true, "大连", "晴", 25, 30, null);
+
+private sealed class BlockingFailureHttpMessageHandler : HttpMessageHandler
+{
+    public ManualResetEventSlim Entered { get; } = new(false);
+    public ManualResetEventSlim Release { get; } = new(false);
+
+    protected override Task<HttpResponseMessage> SendAsync(
+        HttpRequestMessage request,
+        CancellationToken cancellationToken)
+    {
+        Entered.Set();
+        Release.Wait();
+        throw new InvalidOperationException("controlled weather failure");
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+    }
+}
+
+private sealed class ThrowingHttpMessageHandler : HttpMessageHandler
+{
+    protected override Task<HttpResponseMessage> SendAsync(
+        HttpRequestMessage request,
+        CancellationToken cancellationToken) =>
+        throw new InvalidOperationException("controlled weather failure");
 }
 }

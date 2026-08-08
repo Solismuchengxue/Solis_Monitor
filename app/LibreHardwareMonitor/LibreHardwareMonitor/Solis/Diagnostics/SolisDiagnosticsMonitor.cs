@@ -182,6 +182,18 @@ public sealed class SolisDiagnosticsMonitor
         }
     }
 
+    public void ObserveWeatherCollectionFailure(DateTimeOffset now)
+    {
+        lock (_sync)
+        {
+            _weather = Fault(
+                _weather,
+                "天气采集异常",
+                "BackgroundCollectionError");
+            _updatedAt = now;
+        }
+    }
+
     private SolisDiagnosticsSnapshot CreateSnapshot()
     {
         (DiagnosticSource source, DiagnosticCheck? check) = FirstFault();
@@ -253,6 +265,7 @@ public sealed class SolisDiagnosticsMonitor
 
     private static string WeatherFailureMessage(string? category) => category switch
     {
+        "BackgroundCollectionError" => "天气采集异常",
         "ApiKeyMissing" or "HttpStatus401" => "API Key 或认证失败",
         "HttpStatus402" or "HttpStatus403" or "HttpStatus429" => "权限或额度受限",
         "ApiHostInvalid" or "HttpStatus404" => "API Host 无效",

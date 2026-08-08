@@ -29,6 +29,7 @@ public sealed class SolisRuntime : IDisposable
     private readonly DeviceOfflineMonitor _deviceOfflineMonitor;
     private readonly DeviceTokenMismatchMonitor _deviceTokenMismatchMonitor;
     private readonly DeviceTokenStore _deviceTokenStore;
+    private readonly BackgroundCollectionGuard _backgroundCollectionGuard;
     private readonly SolisDiagnosticsMonitor _diagnosticsMonitor;
     private readonly MetricsSnapshotStore _metricsSnapshotStore;
     private readonly NetworkThroughputCollector _networkThroughputCollector;
@@ -67,6 +68,8 @@ public sealed class SolisRuntime : IDisposable
                 codexRoot!,
                 TimeSpan.FromMinutes(10));
         _deviceTokenStore = new DeviceTokenStore(settingsDirectory);
+        var runtimeErrorLog = new RuntimeErrorLog(_deviceTokenStore.SettingsDirectory);
+        _backgroundCollectionGuard = new BackgroundCollectionGuard(runtimeErrorLog.TryWrite);
         _firmwareUpdater = new DeviceFirmwareUpdater(_deviceTokenStore);
         _deviceControlClient = new DeviceControlClient(_deviceTokenStore);
         _diagnosticsMonitor = new SolisDiagnosticsMonitor();
@@ -294,18 +297,21 @@ public sealed class SolisRuntime : IDisposable
         try
         {
             DateTimeOffset now = DateTimeOffset.UtcNow;
-            NetworkThroughputReading networkReading =
-                _networkThroughputCollector.Read(Stopwatch.GetTimestamp());
-            CodexMetricsReading codexReading =
-                _codexMetricsCollector.Read(now);
-            if (Volatile.Read(ref _closing) != 0)
-                return;
+            _backgroundCollectionGuard.Execute(
+                BackgroundCollectionModule.Metrics,
+                now,
+                () =>
+                {
+                    NetworkThroughputReading networkReading =
+                        _networkThroughputCollector.Read(Stopwatch.GetTimestamp());
+                    CodexMetricsReading codexReading = _codexMetricsCollector.Read(now);
+                    if (Volatile.Read(ref _closing) != 0)
+                        return;
 
-            _diagnosticsMonitor.ObserveCodex(codexReading, now);
-            _metricsSnapshotStore.Publish(
-                networkReading,
-                codexReading,
-                now);
+                    _diagnosticsMonitor.ObserveCodex(codexReading, now);
+                    _metricsSnapshotStore.Publish(networkReading, codexReading, now);
+                },
+                _ => { });
         }
         finally
         {
@@ -326,21 +332,37 @@ public sealed class SolisRuntime : IDisposable
             QWeatherMetricsCollector collector =
                 Volatile.Read(ref _weatherMetricsCollector);
             DateTimeOffset now = DateTimeOffset.UtcNow;
-            WeatherMetricsReading reading = collector.Read(now);
-            if (Volatile.Read(ref _closing) != 0 ||
-                !ReferenceEquals(
-                    collector,
-                    Volatile.Read(ref _weatherMetricsCollector)))
-            {
-                return;
-            }
+            _backgroundCollectionGuard.Execute(
+                BackgroundCollectionModule.Weather,
+                now,
+                () =>
+                {
+                    WeatherMetricsReading reading = collector.Read(now);
+                    if (Volatile.Read(ref _closing) != 0 ||
+                        !ReferenceEquals(
+                            collector,
+                            Volatile.Read(ref _weatherMetricsCollector)))
+                    {
+                        return;
+                    }
 
-            _metricsSnapshotStore.UpdateWeather(reading);
-            _diagnosticsMonitor.ObserveWeather(reading, now);
-            WeatherFailureNotification? notification =
-                _weatherFailureMonitor.Observe(reading, now);
-            if (notification is not null)
-                WeatherFailureObserved?.Invoke(notification.Message);
+                    _metricsSnapshotStore.UpdateWeather(reading);
+                    _diagnosticsMonitor.ObserveWeather(reading, now);
+                    WeatherFailureNotification? notification =
+                        _weatherFailureMonitor.Observe(reading, now);
+                    if (notification is not null)
+                        WeatherFailureObserved?.Invoke(notification.Message);
+                },
+                _ =>
+                {
+                    if (Volatile.Read(ref _closing) == 0 &&
+                        ReferenceEquals(
+                            collector,
+                            Volatile.Read(ref _weatherMetricsCollector)))
+                    {
+                        _diagnosticsMonitor.ObserveWeatherCollectionFailure(now);
+                    }
+                });
         }
         finally
         {
