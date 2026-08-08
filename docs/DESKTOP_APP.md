@@ -133,6 +133,16 @@ Solis Monitor 主程序只支持 `.NET 10 x64`，与正式发布、安装器、�
 
 通知助手使用微软官方 `Microsoft.WindowsAppSDK` 2.3.1。当前开发便携版依赖本机已安装的 Windows App Runtime 2.3.1；稳定安装包需要把该运行时纳入安装前置条件。移动便携版目录前可运行 `NotificationHost\SolisMonitor.NotificationHost.exe --unregister-all` 清理旧路径的通知注册，原目录内直接覆盖升级不需要执行。
 
+## 后台采集可靠性
+
+后台指标与天气采集的已批准行为见[后台采集可靠性加固设计](superpowers/specs/2026-08-08-background-collection-reliability-design.md)。指标和天气的普通托管异常仅结束当前采集周期，后续仍按既有 Timer 周期自动重试；成功后的下一次完整采集会自动恢复相应诊断状态。该边界不处理严重进程状态异常，也不改变防重入门、Timer 生命周期或关闭流程。
+
+指标采集失败时不发布半成品快照，保留最后一次完整指标值；连续五秒没有新快照时，沿用“PC 指标服务／指标快照未更新”诊断，下一次成功发布后恢复。天气采集失败时保留最后有效天气值，并将天气诊断标记为 `BackgroundCollectionError`；下一次成功的天气读取会恢复该诊断。后台采集故障不会触发 Windows 通知。
+
+本机诊断日志位于 `%LocalAppData%\SolisMonitor\logs\runtime-errors.log`（实际根目录沿用 `SolisRuntime.SettingsDirectory`）。每行仅记录 UTC 时间、固定模块名、异常类型和 HResult；不记录异常消息、堆栈、Codex 输入内容、API Key、设备令牌、Wi-Fi 信息或完整路径，并对字段长度和换行进行限制。相同模块和异常类型五分钟内最多写入一次。
+
+当前日志文件上限为 512 KiB；即将越界时仅保留一个 `runtime-errors.log.1` 备份，备份同为 512 KiB，总占用约 1 MiB。日志目录创建、打开、写入或轮转失败时静默降级：日志失败不会阻止采集故障进入各自既有诊断规则，指标仍走连续五秒无新快照路径，天气仍进入 `BackgroundCollectionError`；不递归记录日志错误，后续采集仍可恢复。
+
 Codex 任务指标只读访问 `%CODEX_HOME%`（未设置时为当前 Windows 用户目录下的 `.codex`）：从会话索引获取任务名称，按会话文件最后写入时间选择最后活动的主任务。采集器会逐行读取会话 JSONL；首行 `session_meta` 用于取得项目目录，增量扫描只解析 `turn_context` 和 `token_count` 记录，以获得模型、推理强度、上下文和额度。指标每 5 秒刷新；连续 10 分钟没有新的计数事件时显示为“不活跃”并保留最后数值。该状态描述任务活动，而不是 Codex 进程存活。
 
 “账户累计 TOKEN”不使用当前任务的 JSONL 累计值。桌面端启动 Codex 桌面版随附的第一方 `codex.exe app-server --stdio`，初始化后调用 `account/usage/read`，读取账户级 `lifetimeTokens`；成功后每 6 小时刷新，失败后 5 分钟重试。该过程复用 Codex 桌面版已有登录状态，不读取认证文件或令牌，也不向 ESP32 发送认证信息、对话正文或提示词。
