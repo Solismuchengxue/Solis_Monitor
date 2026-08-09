@@ -1,129 +1,236 @@
-# Solis Monitor
+<div align="center">
 
-Solis Monitor 是一套由 Windows 桌面控制中心与 ESP32-S3 副屏组成的端到端 IoT 监控和设备管理系统。它统一采集电脑硬件、网络、Codex 使用情况、天气与本地环境数据，并将实时状态呈现在 NT35510 3.97 英寸 800×480 屏幕上。
+<h1>Solis Monitor</h1>
 
-项目覆盖需求、架构、跨端协议、设备配网与配对、安全控制、双分区 OTA、自动化测试和运维文档，形成从方案设计、软件实现到发布交付的完整工程闭环。
+<h3>From Windows telemetry to a reliable ESP32-S3 edge display.</h3>
 
-[下载 v0.9.6 Beta 4](https://github.com/Solismuchengxue/Solis_Monitor/releases/tag/v0.9.6-beta.4) · [总体设计](DESIGN.md) · [通信协议](docs/PROTOCOL.md) · [测试说明](docs/TESTING.md) · [MPL-2.0 许可证](LICENSE)
+<p><strong>A production-minded IoT system that connects desktop data collection, device provisioning, authenticated control, fault recovery and rollback-safe OTA delivery.</strong></p>
 
-> **技术栈：** C# / .NET 10 / WPF · Libre Hardware Monitor · ESP-IDF 6.0.2 / C · ESP32-S3 · HTTP / JSON · NVS · 双分区 OTA
+<p>把 Windows 遥测、局域网设备管理、ESP32-S3 副屏与可回滚固件升级，交付成一套真正可安装、可诊断、可验证的端到端系统。</p>
 
-## 效果预览
+<p>
+  <a href="https://github.com/Solismuchengxue/Solis_Monitor/releases/tag/v0.9.6-beta.4"><img alt="Release Beta 4" src="https://img.shields.io/badge/release-v0.9.6--beta.4-1f6feb?style=for-the-badge"></a>
+  <a href="LICENSE"><img alt="MPL 2.0 License" src="https://img.shields.io/badge/license-MPL--2.0-7c3aed?style=for-the-badge"></a>
+  <img alt="Windows x64" src="https://img.shields.io/badge/Windows-x64-0078d4?style=for-the-badge&logo=windows11&logoColor=white">
+  <img alt="ESP32-S3" src="https://img.shields.io/badge/ESP32--S3-ESP--IDF_6.0.2-e7352c?style=for-the-badge&logo=espressif&logoColor=white">
+  <img alt="226 automated checks" src="https://img.shields.io/badge/automated_checks-226-2ea043?style=for-the-badge">
+</p>
 
-### ESP32-S3 副屏
+<p>
+  <a href="https://github.com/Solismuchengxue/Solis_Monitor/releases/tag/v0.9.6-beta.4">Download Beta 4</a> ·
+  <a href="DESIGN.md">Architecture</a> ·
+  <a href="docs/PROTOCOL.md">Protocol</a> ·
+  <a href="docs/TESTING.md">Verification</a> ·
+  <a href="#project-brief--项目概览">中文概览</a>
+</p>
 
-![Solis Monitor 小屏设备效果](docs/images/small-screen-hero.png)
+</div>
 
-| 电脑传感器页 | Codex 与环境页 |
-| :---: | :---: |
-| ![Solis Monitor 电脑传感器页](docs/images/small-screen-pc.png) | ![Solis Monitor Codex 与环境页](docs/images/small-screen-codex.png) |
+<p align="center">
+  <img src="docs/images/small-screen-hero.png" alt="Solis Monitor ESP32-S3 edge display" width="100%">
+</p>
 
-### Windows 控制中心
+## Project Brief / 项目概览
 
-| 设备管理 | 服务链路 | 固件更新 |
-| :---: | :---: | :---: |
-| ![Solis Monitor 设备管理界面](docs/images/solis-monitor-device.png) | ![Solis Monitor 服务链路界面](docs/images/solis-monitor-service.png) | ![Solis Monitor 固件更新界面](docs/images/solis-monitor-firmware.png) |
+Solis Monitor turns heterogeneous PC, network, Codex and weather data into a stable one-second telemetry stream for an 800×480 ESP32-S3 display. A native Windows control center owns collection, provisioning, pairing, diagnostics and firmware delivery; the edge device owns local rendering, environment sensing and recovery behavior.
 
-## 工程亮点
+Solis Monitor 将电脑硬件、网络、Codex 和天气等异构数据统一为每秒更新的指标快照。Windows 控制中心负责采集、配网、配对、诊断与固件交付，ESP32-S3 负责本地传感、状态渲染和断线恢复。
 
-- **端到端方案与交付**：从[需求基线](docs/REQUIREMENTS.md)、[总体设计](DESIGN.md)和[架构决策](docs/DECISIONS.md)出发，协同落地 Windows 应用、嵌入式固件、设备接口、部署与验收资料。
-- **跨端系统集成**：Windows 端统一采集 CPU、GPU、内存、存储、网络、Codex 和天气指标，通过 schema 1 HTTP/JSON 协议发布完整快照；ESP32-S3 每秒拉取并事务性更新界面，异常数据不会覆盖最后有效状态。
-- **设备全生命周期管理**：实现 AP Web 配网、局域网发现、6 位码配对、Bearer Token 鉴权、亮度与夜间计划、远程诊断，以及带镜像校验、双槽切换和失败回滚的局域网 OTA。
-- **后台可靠性与可诊断性**：隔离指标与天气采集中的可恢复异常，失败周期保留最后完整快照；运行时错误日志采用脱敏字段、五分钟限流和 512 KiB 有界轮换。
-- **可验证、可维护**：128 项桌面端冒烟测试、78 项固件单元测试和 20 项 Python 工具测试覆盖核心链路，并由 `tools/verify.ps1` 提供统一检查入口。
+| | Verifiable outcome / 可验证成果 |
+| --- | --- |
+| **Integrated product / 完整产品** | Native WPF control center + ESP32-S3 firmware + 3.97-inch physical display |
+| **Cross-runtime contract / 跨端协议** | Versioned schema 1 over HTTP/JSON, shared fixtures and transactional snapshot updates |
+| **Device lifecycle / 设备生命周期** | AP provisioning, LAN discovery, six-digit pairing, token rotation, remote control and local OTA |
+| **Operational resilience / 运行可靠性** | Last-known-good snapshots, isolated collectors, bounded redacted logs and automatic recovery |
+| **Delivery / 发布交付** | Windows installer, portable package, firmware image and SHA-256 manifest |
+| **Verification / 自动化验证** | 128 desktop smoke tests + 78 firmware unit tests + 20 Python checks = **226 checks** |
 
-## 系统架构
+## Forward-Deployed Engineering in Practice / 面向现场的工程交付
+
+This repository is more than a UI demo. It shows how an ambiguous device idea was translated into explicit constraints, integrated across software and hardware boundaries, hardened against real failure modes and packaged for repeatable delivery.
+
+它不是单纯的界面展示，而是一份从模糊需求到稳定交付的工程案例：识别约束、设计跨端边界、处理现场故障，并把结果沉淀为可安装、可升级、可验收的产品基线。
+
+| Delivery stage | Engineering evidence |
+| --- | --- |
+| **Discover & scope / 需求澄清** | Defined the 800×480 information hierarchy, one-device operating model, trusted-LAN boundary and explicit non-goals in the [requirements](docs/REQUIREMENTS.md) and [design](DESIGN.md). |
+| **Design the system / 方案设计** | Split responsibilities between the Windows data authority and the edge renderer; established a versioned [HTTP/JSON contract](docs/PROTOCOL.md) with shared fixtures. |
+| **Build across boundaries / 跨端实现** | Integrated C#/.NET 10, WPF, Libre Hardware Monitor, ESP-IDF/C, NVS, Wi-Fi provisioning, local sensors and a custom RGB565 UI. |
+| **Harden operations / 可靠性加固** | Preserved last valid state during partial failures, isolated background collectors, bounded diagnostic logs and protected OTA with validation and rollback. |
+| **Deploy & validate / 部署验收** | Produced installer and portable artifacts, firmware and checksums; verified automated suites, physical hardware, upgrades and Windows DPI behavior. |
+
+## End-to-End Architecture / 端到端架构
 
 ```mermaid
 flowchart LR
-    A["Windows 控制中心<br/>WPF / .NET 10"] --> B["硬件、网络、Codex、天气采集"]
-    B --> C["schema 1 指标快照"]
-    C -->|"HTTP / JSON"| D["ESP32-S3 固件<br/>ESP-IDF 6.0.2"]
-    A --> E["发现、配对、设备控制、OTA"]
-    E -->|"Bearer Token"| D
-    D --> F["NT35510<br/>800×480 副屏"]
+    subgraph PC["Windows Control Center · WPF / .NET 10"]
+        A["Hardware · Network · Codex · Weather"]
+        B["Unified Snapshot · schema 1"]
+        C["Discovery · Pairing · Diagnostics · OTA"]
+        A --> B
+    end
+
+    subgraph LAN["Trusted Local Network"]
+        D["HTTP / JSON · 1 Hz"]
+        E["Bearer-token Device API"]
+    end
+
+    subgraph EDGE["ESP32-S3 Edge Device · ESP-IDF 6.0.2"]
+        F["Transactional Dashboard Store"]
+        G["800×480 RGB565 UI"]
+        H["NVS · DHT11 · Dual-slot OTA"]
+        F --> G
+        H --> G
+    end
+
+    B --> D --> F
+    C --> E --> H
+
+    classDef source fill:#0f2742,stroke:#38bdf8,color:#f8fafc
+    classDef edge fill:#102a2a,stroke:#34d399,color:#f8fafc
+    class A,B,C source
+    class F,G,H edge
 ```
 
-PC 端是指标与设备管理的数据权威，副屏负责按秒拉取快照并渲染。设备连续 5 秒没有收到有效数据时会进入离线状态，同时保留最后一次有效读数。PC 与 ESP32 当前使用 HTTP，因此只应部署在可信局域网中。
+The PC is the source of truth for remote telemetry and device management. The ESP32-S3 pulls a complete snapshot once per second and updates the dashboard only after the payload passes validation. After five seconds without valid data, it marks the PC link offline while retaining the last complete readings.
 
-## 核心能力
+PC 端是远程指标与设备管理的数据权威；副屏每秒拉取完整快照，只有通过校验后才整体更新。连续五秒没有有效数据时仅把链路标记为离线，同时保留最后一次完整读数。
 
-| 领域 | 能力 |
+## Engineering Highlights / 核心工程能力
+
+### One contract across two runtimes / 跨运行时一致性
+
+- A single schema describes system, Codex and environment metrics across C# and C.
+- Shared fixtures protect serialization, parsing, optional fields and availability semantics.
+- Snapshot-level publication prevents partially collected data from leaking to the screen.
+
+### Provisioning without exposing secrets / 配网与安全边界
+
+- The device provides a captive AP portal for first-time Wi-Fi setup.
+- Physical interaction opens discovery; a rotating six-digit code completes pairing.
+- Bearer tokens are generated and synchronized internally instead of being exposed in the normal UI.
+- Credentials, API keys and complete tokens are excluded from diagnostics and runtime logs.
+
+### Upgradeable edge deployment / 可维护的边缘交付
+
+- The desktop validates chip type, project name, version, image integrity and slot capacity before upload.
+- Firmware streams the image into the inactive OTA slot and aborts cleanly on interruption.
+- A newly booted image must confirm healthy operation; otherwise the ESP-IDF bootloader rolls back.
+
+### Failure isolation and recovery / 故障隔离与恢复
+
+- Metrics and weather collectors fail independently and retry on their existing schedules.
+- Failed cycles preserve the last complete values instead of publishing half-valid snapshots.
+- Redacted runtime errors are rate-limited and rotated within an approximately 1 MiB total bound.
+- Network, weather and sensor failures do not collapse unrelated parts of the system.
+
+## Product Gallery / 产品效果
+
+### ESP32-S3 edge display / 副屏界面
+
+| PC telemetry / 电脑状态 | Codex & environment / Codex 与环境 |
+| :---: | :---: |
+| ![PC telemetry page](docs/images/small-screen-pc.png) | ![Codex and environment page](docs/images/small-screen-codex.png) |
+
+### Windows control center / Windows 控制中心
+
+| Device lifecycle / 设备管理 | Service observability / 服务链路 | Firmware delivery / 固件更新 |
+| :---: | :---: | :---: |
+| ![Device management](docs/images/solis-monitor-device.png) | ![Service diagnostics](docs/images/solis-monitor-service.png) | ![Firmware update](docs/images/solis-monitor-firmware.png) |
+
+## Evidence, Not Claims / 可核验工程证据
+
+| Evidence | What it protects |
 | --- | --- |
-| 电脑监控 | CPU、GPU/显存、内存、物理硬盘、FPS、出口网速与实时传感器 |
-| Codex 指标 | 最后活动项目与任务、模型、推理强度、上下文、累计 Token 和周额度 |
-| 环境信息 | 和风天气、本地温湿度、网络状态与失败回退 |
-| 设备管理 | AP Web 配网、自动发现、6 位码配对、令牌轮换、亮度和夜间计划 |
-| 固件维护 | 本地镜像检查、局域网 OTA、双应用槽、启动确认与失败回滚 |
-| Windows 体验 | 原生 WPF 控制中心、托盘运行、开机启动、诊断与原生通知 |
+| **128 desktop smoke tests** | Startup, metrics, Codex parsing, device API, pairing, diagnostics, notifications, OTA validation and background-failure recovery |
+| **78 ESP-IDF unit tests** | Protocol parsing, provisioning, configuration, device control, environment sensing, UI state and OTA behavior |
+| **20 Python checks** | Reproducible assets, generated resources, repository structure and firmware-size constraints |
+| **Physical-device acceptance** | ESP32-S3 boot, 800×480 rendering, LAN reconnect, local sensor input, OTA and rollback behavior |
+| **Windows delivery acceptance** | Installer upgrade, portable launch, runtime prerequisites and 100% / 125% / 150% DPI coverage |
 
-## 下载与运行
+The complete commands, current boundaries and hands-on procedures are documented in [Testing & Acceptance](docs/TESTING.md). Historical assertions are not promoted into current proof without source, automated-test or physical-device evidence.
 
-当前 GitHub Latest 版本为 [Solis Monitor v0.9.6 Beta 4](https://github.com/Solismuchengxue/Solis_Monitor/releases/tag/v0.9.6-beta.4)，包含 Windows 桌面端 `0.9.6` 和 ESP32-S3 固件 `0.1.5`。
+完整命令、当前验证边界和实机步骤见[测试与验收文档](docs/TESTING.md)。没有源码、自动化测试或实机证据支撑的历史结论，不会被包装成当前能力。
 
-| 文件 | 用途 |
+## Download & Run / 下载运行
+
+The current GitHub Latest release is [Solis Monitor v0.9.6 Beta 4](https://github.com/Solismuchengxue/Solis_Monitor/releases/tag/v0.9.6-beta.4), containing Windows desktop version `0.9.6` and ESP32-S3 firmware version `0.1.5`.
+
+| Artifact | Purpose |
 | --- | --- |
-| [Windows x64 安装包](https://github.com/Solismuchengxue/Solis_Monitor/releases/download/v0.9.6-beta.4/SolisMonitor-0.9.6-win-x64-setup.exe) | 标准安装、开始菜单入口和可选桌面快捷方式 |
-| [Windows x64 便携版](https://github.com/Solismuchengxue/Solis_Monitor/releases/download/v0.9.6-beta.4/SolisMonitor-0.9.6-win-x64-portable.zip) | 解压后运行 `SolisMonitor/SolisMonitor.exe` |
-| [ESP32-S3 OTA 固件](https://github.com/Solismuchengxue/Solis_Monitor/releases/download/v0.9.6-beta.4/solis_monitor-0.1.5-esp32s3.bin) | 已完成双 OTA 分区迁移设备的局域网升级 |
-| [SHA-256 校验清单](https://github.com/Solismuchengxue/Solis_Monitor/releases/download/v0.9.6-beta.4/SHA256SUMS.txt) | 校验下载文件完整性 |
+| [Windows x64 installer](https://github.com/Solismuchengxue/Solis_Monitor/releases/download/v0.9.6-beta.4/SolisMonitor-0.9.6-win-x64-setup.exe) | Standard installation, Start menu entry and optional desktop shortcut |
+| [Windows x64 portable package](https://github.com/Solismuchengxue/Solis_Monitor/releases/download/v0.9.6-beta.4/SolisMonitor-0.9.6-win-x64-portable.zip) | Extract and run `SolisMonitor/SolisMonitor.exe` |
+| [ESP32-S3 OTA firmware](https://github.com/Solismuchengxue/Solis_Monitor/releases/download/v0.9.6-beta.4/solis_monitor-0.1.5-esp32s3.bin) | LAN upgrade for devices already migrated to the dual-OTA layout |
+| [SHA-256 manifest](https://github.com/Solismuchengxue/Solis_Monitor/releases/download/v0.9.6-beta.4/SHA256SUMS.txt) | Download-integrity verification |
 
-Windows 端支持 Windows 10 1809 或更高版本的 x64 系统，需要 [.NET 10 Desktop Runtime x64](https://dotnet.microsoft.com/en-us/download/dotnet/10.0)；原生通知功能需要 [Windows App Runtime 2.3.1 x64](https://learn.microsoft.com/en-us/windows/apps/windows-app-sdk/downloads)。硬件传感器采集建议以管理员权限运行。
+Windows requires x64 Windows 10 version 1809 or later and the [.NET 10 Desktop Runtime](https://dotnet.microsoft.com/en-us/download/dotnet/10.0). Native notifications additionally use [Windows App Runtime 2.3.1](https://learn.microsoft.com/en-us/windows/apps/windows-app-sdk/downloads). Administrator privileges are recommended for complete hardware-sensor access.
 
-当前安装包和主程序尚未数字签名，Windows 可能显示“未知发布者”。首次从旧单 `factory` 分区迁移的设备不能只上传 OTA 文件，仍需按[固件文档](docs/FIRMWARE.md)完成一次完整串口烧录。
+### First-device workflow / 首次接入
 
-## 使用流程
+1. Install or extract the Windows control center and start Solis Monitor.
+2. Connect a phone to the device hotspot `Solis-Monitor-xxxx`, then open `http://192.168.0.1/` to configure Wi-Fi.
+3. Double-click GPIO21 to enable discovery and enter the rotating six-digit pairing code in the desktop wizard.
+4. After pairing, manage display behavior, diagnostics and local firmware OTA from the Windows application.
 
-1. 安装或解压 Windows 桌面端，并以管理员权限启动 Solis Monitor。
-2. 全新设备启动后会开放 `Solis-Monitor-xxxx` 热点；手机连接后访问 `http://192.168.0.1/` 完成 Wi-Fi 配置。
-3. 设备联网后双击 GPIO21 开启发现，在桌面端设备向导中输入副屏显示的 6 位配对码。
-4. 配对成功后，副屏开始按秒刷新指标；后续可在桌面端调整显示、电源与天气设置，并通过“固件更新”页执行局域网 OTA。
+Detailed recovery and provisioning behavior is documented in [Provisioning & Pairing](docs/PROVISIONING.md).
 
-设备令牌由桌面端生成并自动同步，不需要用户查看或手工输入。详细操作及救援入口见[配网与配对文档](docs/PROVISIONING.md)。
+## Technology & Repository / 技术与仓库
 
-## 项目结构
+| Layer | Technology | Responsibility |
+| --- | --- | --- |
+| Windows application | C# · .NET 10 · WPF · Libre Hardware Monitor | Collection, control center, API, diagnostics and release packaging |
+| Device firmware | C · ESP-IDF 6.0.2 · FreeRTOS · NVS | Connectivity, protocol, control, OTA, display and local sensing |
+| Integration | HTTP/1.1 · JSON · Bearer token · shared fixtures | Versioned telemetry and device-management contracts |
+| Verification | .NET smoke runner · Unity · Python · PowerShell | Cross-boundary regression and release gates |
 
-| 路径 | 职责 |
+<details>
+<summary><strong>Repository map / 仓库结构</strong></summary>
+
+| Path | Responsibility |
 | --- | --- |
-| `app/LibreHardwareMonitor/` | Windows 控制中心、硬件采集、设备 API、通知与安装发布输入 |
-| `firmware/main/` | ESP32-S3 启动入口和主循环 |
-| `firmware/components/` | 网络、协议、设备控制、OTA、显示、UI 与板级模块 |
-| `firmware/test_apps/unit/` | 固件单元测试工程 |
-| `tools/`、`app/tests/` | 资源生成、结构检查和桌面端冒烟测试 |
-| `reference/` | 原理图、引脚、硬件参数与显示素材 |
-| `docs/` | 需求、协议、配网、测试、桌面端、固件和运维文档 |
+| `app/LibreHardwareMonitor/` | Windows control center, collection, device API and release input |
+| `firmware/main/` | ESP32-S3 entry point and main loop |
+| `firmware/components/` | Network, protocol, control, OTA, display, UI and board modules |
+| `firmware/test_apps/unit/` | ESP-IDF unit-test application |
+| `app/tests/`, `tools/` | Desktop smoke tests, resource checks and unified verification |
+| `reference/` | Schematics, pins, hardware parameters and display resources |
+| `docs/` | Requirements, architecture decisions, protocol, operations and acceptance evidence |
 
-## 构建与验证
+</details>
 
-在 .NET 10、Python 3.12 和 ESP-IDF 6.0.2 环境中运行统一验证：
+<details>
+<summary><strong>Build and verify / 构建与验证</strong></summary>
+
+With .NET 10, Python 3.12 and ESP-IDF 6.0.2 available:
 
 ```powershell
 pwsh -NoProfile -File .\tools\verify.ps1
 ```
 
-脚本会还原、测试并构建 Windows 解决方案，运行 Python 检查，并使用独立配置构建固件和报告镜像大小；它不会刷写设备或修改 Windows 防火墙。正式固件必须能够装入任一 `0x3E0000` OTA 分区。
+The script restores, tests and builds the Windows solution, runs Python checks, builds firmware with an isolated configuration and verifies that the image fits either `0x3E0000` OTA slot. It does not flash hardware or change the Windows firewall.
 
-更具体的入口：
+</details>
 
-- [Windows 桌面端构建、配置与发布](docs/DESKTOP_APP.md)
-- [ESP32-S3 固件构建、分区与烧录](docs/FIRMWARE.md)
-- [通信协议与认证边界](docs/PROTOCOL.md)
-- [完整测试和实机验收](docs/TESTING.md)
+## Documentation / 文档导航
 
-## 文档导航
+[Requirements](docs/REQUIREMENTS.md) · [Architecture](DESIGN.md) · [Decisions](docs/DECISIONS.md) · [Desktop](docs/DESKTOP_APP.md) · [Firmware](docs/FIRMWARE.md) · [Protocol](docs/PROTOCOL.md) · [Provisioning](docs/PROVISIONING.md) · [Testing](docs/TESTING.md)
 
-| 文档 | 内容 |
-| --- | --- |
-| [需求基线](docs/REQUIREMENTS.md) | 范围、角色、功能与非功能需求 |
-| [总体设计](DESIGN.md) | 系统架构、数据流与关键约束 |
-| [架构决策](docs/DECISIONS.md) | 已采用方案、未采用方案和复审条件 |
-| [Windows 桌面端](docs/DESKTOP_APP.md) | 控制中心、设备 API、安装与通知 |
-| [固件](docs/FIRMWARE.md) | 硬件目标、构建、分区和 OTA |
-| [配网与配对](docs/PROVISIONING.md) | AP Portal、发现、配对和救援入口 |
-| [Codex 指标](docs/CODEX_METRICS.md) | 本地任务解析、额度与脱敏边界 |
-| [天气](docs/WEATHER.md) | 本地密钥、采集、刷新和失败回退 |
-| [测试](docs/TESTING.md) | 自动化检查、实机验证和发布门禁 |
+## Engineering Boundaries / 工程边界
 
-## 许可证
+- PC-to-device traffic currently uses HTTP and must remain inside a trusted local network; it is not designed for direct internet exposure.
+- Release executables are not code-signed, so Windows may display an unknown-publisher warning.
+- Devices still using the legacy single `factory` partition require one full serial flash before normal dual-slot OTA updates.
+- Solis Monitor is a personal engineering project and reference implementation; this README does not claim a commercial customer deployment.
 
-本仓库原创内容采用 [Mozilla Public License 2.0](LICENSE) 发布。`app/LibreHardwareMonitor/` 中基于 Libre Hardware Monitor 的源码继续受 MPL-2.0 约束；第三方组件与素材保留各自的许可证和版权声明，详见对应目录中的许可证文件及 `app/LibreHardwareMonitor/THIRD-PARTY-NOTICES.txt`。
+These boundaries are intentional and documented because sound delivery includes knowing what a system does **not** guarantee.
+
+## License
+
+Original repository content is released under the [Mozilla Public License 2.0](LICENSE). Source derived from Libre Hardware Monitor remains subject to MPL-2.0; third-party components and assets retain their respective licenses and notices, including `app/LibreHardwareMonitor/THIRD-PARTY-NOTICES.txt`.
+
+---
+
+<div align="center">
+  <strong>Designed across desktop, protocol, firmware and physical-device boundaries.</strong><br>
+  从需求、跨端实现到发布验收，把复杂系统真正交付出来。
+</div>
