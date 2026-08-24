@@ -135,7 +135,7 @@ static void CodexWeeklyUsageIgnoresIncompleteTokenEvents()
     }
 }
 
-static void CodexWeeklyUsageIgnoresSubagentSessions()
+static void CodexWeeklyUsageIncludesSubagentSessions()
 {
     string root = Path.Combine(
         Path.GetTempPath(),
@@ -182,8 +182,8 @@ static void CodexWeeklyUsageIgnoresSubagentSessions()
         var reader = new CodexLocalWeeklyUsageReader(root);
         string resetText = nextReset.ToLocalTime().ToString(
             "MM-dd HH:mm", CultureInfo.InvariantCulture);
-        Near(100_000, reader.Read(resetText, periodStart.AddMinutes(3)),
-            "子代理任务不应计入账户周使用 Token");
+        Near(1_000_000, reader.Read(resetText, periodStart.AddMinutes(3)),
+            "子代理任务消耗没有计入账户周使用 Token");
     }
     finally
     {
@@ -275,7 +275,7 @@ static void CodexWeeklyUsageRemovesMissingSessions()
     }
 }
 
-static void CodexWeeklyUsagePrefersAccountDelta()
+static void CodexWeeklyUsageKeepsLargerLocalTotal()
 {
     string root = Path.Combine(
         Path.GetTempPath(),
@@ -331,8 +331,8 @@ static void CodexWeeklyUsagePrefersAccountDelta()
         }
 
         Near(1_200_000, reading.TotalTokens, "账户累计 Token 后台读取未完成");
-        Near(200_000, reading.WeeklyUsedTokens,
-            "账户周期差值可用时不应被更大的本地估算覆盖");
+        Near(900_000, reading.WeeklyUsedTokens,
+            "较小的账户活动摘要不应覆盖完整本地周期 Token");
     }
     finally
     {

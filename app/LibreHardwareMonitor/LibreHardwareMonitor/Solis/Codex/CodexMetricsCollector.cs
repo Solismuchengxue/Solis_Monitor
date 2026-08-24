@@ -181,9 +181,13 @@ public sealed class CodexMetricsCollector
 
     private void UpdateWeeklyUsedTokens()
     {
-        _weeklyUsedTokens = _accountWeeklyUsedTokens is > 0 || _localWeeklyUsedTokens is null
-            ? _accountWeeklyUsedTokens
-            : _localWeeklyUsedTokens;
+        _weeklyUsedTokens = (_localWeeklyUsedTokens, _accountWeeklyUsedTokens) switch
+        {
+            (long local, long account) => Math.Max(local, account),
+            (long local, null) => local,
+            (null, long account) => account,
+            _ => null
+        };
     }
 
     private void Refresh()
