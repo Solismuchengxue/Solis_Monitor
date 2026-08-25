@@ -71,13 +71,17 @@ static void DeviceApiResponseIsCompatible()
         "GET", "/metrics", $"Bearer {token}", token, store.Current, DateTimeOffset.Now);
     Equal(HttpStatusCode.NotFound, wrongPath.StatusCode, "非设备 API 路径没有返回 404");
 
+    DateTime localDeviceTime = new(2026, 7, 21, 15, 30, 0, DateTimeKind.Unspecified);
+    DateTimeOffset deviceTime = new(
+        localDeviceTime,
+        TimeZoneInfo.Local.GetUtcOffset(localDeviceTime));
     DeviceMetricsResponse response = DeviceMetricsServer.CreateResponse(
         "GET",
         DeviceMetricsServer.MetricsPath,
         $"Bearer {token}",
         token,
         store.Current,
-        new DateTimeOffset(2026, 7, 21, 15, 30, 0, TimeSpan.FromHours(8)));
+        deviceTime);
     Equal(HttpStatusCode.OK, response.StatusCode, "正确令牌未返回 200");
     True(response.NoStore, "设备指标响应必须禁止缓存");
     True(response.Payload.Length <= DeviceMetricsEnvelope.MaximumPayloadBytes, "设备指标响应超过固件 4096 字节上限");

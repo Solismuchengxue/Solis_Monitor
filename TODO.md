@@ -44,7 +44,11 @@
 Runner 中暴露 `SolisMonitor.NotificationHost` 未被主项目 Restore 覆盖，因缺少
 `project.assets.json` 在桌面构建步骤失败。显式 Restore 回归测试已完成 RED→GREEN；
 修正后的本地 Restore、两次 Release 构建、128/128 桌面冒烟和 21/21 Python 测试
-均通过，等待提交、推送和第二次远端 CI 验证。
+均通过。第二次远端 CI 已确认全部 Restore 和构建通过，并在 UTC Runner 暴露设备
+时间测试固定依赖 UTC+8，结果为 127/128；当前改为构造运行机器本地 `15:30`，
+保持协议字面期望不变。中国标准时间下两次 Release 构建 0 警告、0 错误，桌面
+冒烟 128/128、Python 工具测试 21/21 通过；Windows 不接受进程级 `TZ` 覆盖，
+UTC GREEN 等待 GitHub Windows Runner 复验。
 
 ## 最近收口：周 Token 统计口径
 
