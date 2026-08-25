@@ -128,6 +128,19 @@ class ProjectConfigTests(unittest.TestCase):
         self.assertIn("permissions:\n  contents: read", workflow)
         self.assertIn("timeout-minutes:", workflow)
         self.assertIn("dotnet restore", workflow)
+        notification_host_restore = (
+            "dotnet restore .\\app\\LibreHardwareMonitor\\"
+            "SolisMonitor.NotificationHost\\SolisMonitor.NotificationHost.csproj"
+        )
+        desktop_build = (
+            "dotnet build .\\app\\LibreHardwareMonitor\\"
+            "LibreHardwareMonitor\\LibreHardwareMonitor.csproj"
+        )
+        self.assertIn(notification_host_restore, workflow)
+        self.assertLess(
+            workflow.index(notification_host_restore),
+            workflow.index(desktop_build),
+        )
         self.assertGreaterEqual(workflow.count("dotnet build"), 2)
         self.assertIn("dotnet run --project", workflow)
         self.assertIn("python -m unittest discover", workflow)

@@ -40,8 +40,11 @@
 - 推送后 GitHub Actions 首次运行成功，再将本项标记为 `[x]`。
 
 当前进度（2026-08-25）：本地 .NET 10 x64 Release 两次构建均为 0 警告、
-0 错误，桌面冒烟测试 128/128、Python 工具测试 21/21 通过；等待提交、推送和
-GitHub Actions 首次远端运行门禁。
+0 错误，桌面冒烟测试 128/128、Python 工具测试 21/21 通过。首次远端 CI 在干净
+Runner 中暴露 `SolisMonitor.NotificationHost` 未被主项目 Restore 覆盖，因缺少
+`project.assets.json` 在桌面构建步骤失败。显式 Restore 回归测试已完成 RED→GREEN；
+修正后的本地 Restore、两次 Release 构建、128/128 桌面冒烟和 21/21 Python 测试
+均通过，等待提交、推送和第二次远端 CI 验证。
 
 ## 最近收口：周 Token 统计口径
 

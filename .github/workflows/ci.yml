@@ -41,6 +41,9 @@ jobs:
       - name: Restore desktop application
         run: dotnet restore .\app\LibreHardwareMonitor\LibreHardwareMonitor\LibreHardwareMonitor.csproj --disable-parallel -p:NuGetAudit=false
 
+      - name: Restore notification host
+        run: dotnet restore .\app\LibreHardwareMonitor\SolisMonitor.NotificationHost\SolisMonitor.NotificationHost.csproj --disable-parallel -p:NuGetAudit=false -p:Platform=x64
+
       - name: Restore desktop smoke tests
         run: dotnet restore .\app\tests\SolisMonitor.Metrics.SmokeTests\SolisMonitor.Metrics.SmokeTests.csproj --disable-parallel -p:NuGetAudit=false -p:Platform=x64
 
