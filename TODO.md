@@ -20,12 +20,12 @@
 - 当前功能基线：PC 指标、Codex 指标、天气、DHT11、AP/STA WebUI、6 位码配对、
   设备控制、本地 OTA、通知和安装包已形成可用闭环。
 - 当前 GitHub Latest：`v0.9.6-beta.5`；PC `0.9.6`，固件 `0.1.5`
-- 当前任务：`CI-001` GitHub Actions 持续集成
+- 当前任务：无；`CI-001` GitHub Actions 持续集成已完成
 - 详细审计和判断依据：[`docs/REPOSITORY_REVIEW.md`](docs/REPOSITORY_REVIEW.md)
 
-## 当前任务：CI-001 GitHub Actions 持续集成
+## 最近收口：CI-001 GitHub Actions 持续集成
 
-状态：`[~]`
+状态：`[x]`
 
 范围：
 
@@ -39,7 +39,7 @@
 - 本地配置测试、桌面构建、128 项冒烟测试和 Python 工具测试通过；
 - 推送后 GitHub Actions 首次运行成功，再将本项标记为 `[x]`。
 
-当前进度（2026-08-25）：本地 .NET 10 x64 Release 两次构建均为 0 警告、
+完成结果（2026-08-25）：本地 .NET 10 x64 Release 两次构建均为 0 警告、
 0 错误，桌面冒烟测试 128/128、Python 工具测试 21/21 通过。首次远端 CI 在干净
 Runner 中暴露 `SolisMonitor.NotificationHost` 未被主项目 Restore 覆盖，因缺少
 `project.assets.json` 在桌面构建步骤失败。显式 Restore 回归测试已完成 RED→GREEN；
@@ -47,8 +47,9 @@ Runner 中暴露 `SolisMonitor.NotificationHost` 未被主项目 Restore 覆盖�
 均通过。第二次远端 CI 已确认全部 Restore 和构建通过，并在 UTC Runner 暴露设备
 时间测试固定依赖 UTC+8，结果为 127/128；当前改为构造运行机器本地 `15:30`，
 保持协议字面期望不变。中国标准时间下两次 Release 构建 0 警告、0 错误，桌面
-冒烟 128/128、Python 工具测试 21/21 通过；Windows 不接受进程级 `TZ` 覆盖，
-UTC GREEN 等待 GitHub Windows Runner 复验。
+冒烟 128/128、Python 工具测试 21/21 通过。第三次远端 CI 已在 Windows UTC Runner
+完整通过：3 项 Restore、2 项 Release 构建、桌面冒烟 128/128、Python 工具测试
+21/21；运行记录：<https://github.com/Solismuchengxue/Solis_Monitor/actions/runs/32822140165>。
 
 ## 最近收口：周 Token 统计口径
 
