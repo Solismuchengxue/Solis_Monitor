@@ -20,8 +20,28 @@
 - 当前功能基线：PC 指标、Codex 指标、天气、DHT11、AP/STA WebUI、6 位码配对、
   设备控制、本地 OTA、通知和安装包已形成可用闭环。
 - 当前 GitHub Latest：`v0.9.6-beta.5`；PC `0.9.6`，固件 `0.1.5`
-- 当前任务：无；周 Token 统计口径修复和 `RUNTIME-002` 后台采集可靠性加固均已完成
+- 当前任务：`CI-001` GitHub Actions 持续集成
 - 详细审计和判断依据：[`docs/REPOSITORY_REVIEW.md`](docs/REPOSITORY_REVIEW.md)
+
+## 当前任务：CI-001 GitHub Actions 持续集成
+
+状态：`[~]`
+
+范围：
+
+- 在 `main` 推送、Pull Request 和手动触发时使用 Windows 托管 Runner；
+- 执行 .NET 10 x64 Release 构建、桌面冒烟测试和 Python 工具测试；
+- ESP-IDF 6.0.2 固件构建继续保留在本地完整验证与 Release 门禁中。
+
+完成标准：
+
+- 工作流使用只读仓库权限、固定运行时主版本和 30 分钟超时；
+- 本地配置测试、桌面构建、128 项冒烟测试和 Python 工具测试通过；
+- 推送后 GitHub Actions 首次运行成功，再将本项标记为 `[x]`。
+
+当前进度（2026-08-25）：本地 .NET 10 x64 Release 两次构建均为 0 警告、
+0 错误，桌面冒烟测试 128/128、Python 工具测试 21/21 通过；等待提交、推送和
+GitHub Actions 首次远端运行门禁。
 
 ## 最近收口：周 Token 统计口径
 

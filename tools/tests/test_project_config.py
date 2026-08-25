@@ -114,6 +114,25 @@ class ProjectConfigTests(unittest.TestCase):
         self.assertIn(" reconfigure", verify_script)
         self.assertIn("ninja -C $firmwareBuild -j1", verify_script)
 
+    def test_github_actions_ci_covers_desktop_and_tooling_checks(self):
+        workflow = (
+            PROJECT_ROOT.parent / ".github" / "workflows" / "ci.yml"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn("windows-latest", workflow)
+        self.assertIn("actions/checkout@v7", workflow)
+        self.assertIn("actions/setup-dotnet@v6", workflow)
+        self.assertIn("dotnet-version: '10.0.x'", workflow)
+        self.assertIn("actions/setup-python@v7", workflow)
+        self.assertIn("python-version: '3.12'", workflow)
+        self.assertIn("permissions:\n  contents: read", workflow)
+        self.assertIn("timeout-minutes:", workflow)
+        self.assertIn("dotnet restore", workflow)
+        self.assertGreaterEqual(workflow.count("dotnet build"), 2)
+        self.assertIn("dotnet run --project", workflow)
+        self.assertIn("python -m unittest discover", workflow)
+        self.assertNotIn("idf.py", workflow)
+
     def test_network_client_internal_header_is_private_but_unit_testable(self):
         component = PROJECT_ROOT / "components" / "network_client"
         component_cmake = (component / "CMakeLists.txt").read_text(encoding="utf-8")
