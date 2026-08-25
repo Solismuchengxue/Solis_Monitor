@@ -11,7 +11,7 @@
 <p><strong>一套面向真实交付的 IoT 系统，贯通桌面数据采集、设备配网、鉴权控制、故障恢复与可回滚 OTA。</strong></p>
 
 <p>
-  <a href="https://github.com/Solismuchengxue/Solis_Monitor/releases/tag/v0.9.6-beta.4"><img alt="Beta 4 版本" src="https://img.shields.io/badge/release-v0.9.6--beta.4-1f6feb?style=for-the-badge"></a>
+  <a href="https://github.com/Solismuchengxue/Solis_Monitor/releases/tag/v0.9.6-beta.5"><img alt="Beta 5 版本" src="https://img.shields.io/badge/release-v0.9.6--beta.5-1f6feb?style=for-the-badge"></a>
   <a href="LICENSE"><img alt="MPL 2.0 许可证" src="https://img.shields.io/badge/license-MPL--2.0-7c3aed?style=for-the-badge"></a>
   <img alt="Windows x64" src="https://img.shields.io/badge/Windows-x64-0078d4?style=for-the-badge&logo=windows11&logoColor=white">
   <img alt="ESP32-S3" src="https://img.shields.io/badge/ESP32--S3-ESP--IDF_6.0.2-e7352c?style=for-the-badge&logo=espressif&logoColor=white">
@@ -19,7 +19,7 @@
 </p>
 
 <p>
-  <a href="https://github.com/Solismuchengxue/Solis_Monitor/releases/tag/v0.9.6-beta.4">下载 Beta 4</a> ·
+  <a href="https://github.com/Solismuchengxue/Solis_Monitor/releases/tag/v0.9.6-beta.5">下载 Beta 5</a> ·
   <a href="DESIGN.md">总体设计</a> ·
   <a href="docs/PROTOCOL.md">通信协议</a> ·
   <a href="docs/TESTING.md">测试验证</a>
@@ -147,14 +147,14 @@ PC 端是远程指标和设备管理的数据权威。ESP32-S3 每秒拉取一�
 
 ## 下载运行
 
-当前 GitHub Latest 版本为 [Solis Monitor v0.9.6 Beta 4](https://github.com/Solismuchengxue/Solis_Monitor/releases/tag/v0.9.6-beta.4)，包含 Windows 桌面端 `0.9.6` 和 ESP32-S3 固件 `0.1.5`。
+当前 GitHub Latest 版本为 [Solis Monitor v0.9.6 Beta 5](https://github.com/Solismuchengxue/Solis_Monitor/releases/tag/v0.9.6-beta.5)，包含 Windows 桌面端 `0.9.6` 和 ESP32-S3 固件 `0.1.5`。
 
 | 文件 | 用途 |
 | --- | --- |
-| [Windows x64 安装包](https://github.com/Solismuchengxue/Solis_Monitor/releases/download/v0.9.6-beta.4/SolisMonitor-0.9.6-win-x64-setup.exe) | 标准安装、开始菜单入口和可选桌面快捷方式 |
-| [Windows x64 便携包](https://github.com/Solismuchengxue/Solis_Monitor/releases/download/v0.9.6-beta.4/SolisMonitor-0.9.6-win-x64-portable.zip) | 解压后运行 `SolisMonitor/SolisMonitor.exe` |
-| [ESP32-S3 OTA 固件](https://github.com/Solismuchengxue/Solis_Monitor/releases/download/v0.9.6-beta.4/solis_monitor-0.1.5-esp32s3.bin) | 已迁移至双 OTA 分区设备的局域网升级 |
-| [SHA-256 校验清单](https://github.com/Solismuchengxue/Solis_Monitor/releases/download/v0.9.6-beta.4/SHA256SUMS.txt) | 校验下载文件完整性 |
+| [Windows x64 安装包](https://github.com/Solismuchengxue/Solis_Monitor/releases/download/v0.9.6-beta.5/SolisMonitor-0.9.6-win-x64-setup.exe) | 标准安装、开始菜单入口和可选桌面快捷方式 |
+| [Windows x64 便携包](https://github.com/Solismuchengxue/Solis_Monitor/releases/download/v0.9.6-beta.5/SolisMonitor-0.9.6-win-x64-portable.zip) | 解压后运行 `SolisMonitor/SolisMonitor.exe` |
+| [ESP32-S3 OTA 固件](https://github.com/Solismuchengxue/Solis_Monitor/releases/download/v0.9.6-beta.5/solis_monitor-0.1.5-esp32s3.bin) | 已迁移至双 OTA 分区设备的局域网升级 |
+| [SHA-256 校验清单](https://github.com/Solismuchengxue/Solis_Monitor/releases/download/v0.9.6-beta.5/SHA256SUMS.txt) | 校验下载文件完整性 |
 
 Windows 端需要 x64 Windows 10 1809 或更高版本，以及 [.NET 10 Desktop Runtime](https://dotnet.microsoft.com/en-us/download/dotnet/10.0)。原生通知还会使用 [Windows App Runtime 2.3.1](https://learn.microsoft.com/en-us/windows/apps/windows-app-sdk/downloads)。完整访问硬件传感器时建议使用管理员权限。
 

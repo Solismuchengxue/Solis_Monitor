@@ -11,7 +11,7 @@
 <p><strong>A production-minded IoT system that connects desktop data collection, device provisioning, authenticated control, fault recovery and rollback-safe OTA delivery.</strong></p>
 
 <p>
-  <a href="https://github.com/Solismuchengxue/Solis_Monitor/releases/tag/v0.9.6-beta.4"><img alt="Release Beta 4" src="https://img.shields.io/badge/release-v0.9.6--beta.4-1f6feb?style=for-the-badge"></a>
+  <a href="https://github.com/Solismuchengxue/Solis_Monitor/releases/tag/v0.9.6-beta.5"><img alt="Release Beta 5" src="https://img.shields.io/badge/release-v0.9.6--beta.5-1f6feb?style=for-the-badge"></a>
   <a href="LICENSE"><img alt="MPL 2.0 License" src="https://img.shields.io/badge/license-MPL--2.0-7c3aed?style=for-the-badge"></a>
   <img alt="Windows x64" src="https://img.shields.io/badge/Windows-x64-0078d4?style=for-the-badge&logo=windows11&logoColor=white">
   <img alt="ESP32-S3" src="https://img.shields.io/badge/ESP32--S3-ESP--IDF_6.0.2-e7352c?style=for-the-badge&logo=espressif&logoColor=white">
@@ -19,7 +19,7 @@
 </p>
 
 <p>
-  <a href="https://github.com/Solismuchengxue/Solis_Monitor/releases/tag/v0.9.6-beta.4">Download Beta 4</a> ·
+  <a href="https://github.com/Solismuchengxue/Solis_Monitor/releases/tag/v0.9.6-beta.5">Download Beta 5</a> ·
   <a href="DESIGN.md">Architecture</a> ·
   <a href="docs/PROTOCOL.md">Protocol</a> ·
   <a href="docs/TESTING.md">Verification</a>
@@ -147,14 +147,14 @@ The complete commands, current boundaries and hands-on procedures are documented
 
 ## Download & Run
 
-The current GitHub Latest release is [Solis Monitor v0.9.6 Beta 4](https://github.com/Solismuchengxue/Solis_Monitor/releases/tag/v0.9.6-beta.4), containing Windows desktop version `0.9.6` and ESP32-S3 firmware version `0.1.5`.
+The current GitHub Latest release is [Solis Monitor v0.9.6 Beta 5](https://github.com/Solismuchengxue/Solis_Monitor/releases/tag/v0.9.6-beta.5), containing Windows desktop version `0.9.6` and ESP32-S3 firmware version `0.1.5`.
 
 | Artifact | Purpose |
 | --- | --- |
-| [Windows x64 installer](https://github.com/Solismuchengxue/Solis_Monitor/releases/download/v0.9.6-beta.4/SolisMonitor-0.9.6-win-x64-setup.exe) | Standard installation, Start menu entry and optional desktop shortcut |
-| [Windows x64 portable package](https://github.com/Solismuchengxue/Solis_Monitor/releases/download/v0.9.6-beta.4/SolisMonitor-0.9.6-win-x64-portable.zip) | Extract and run `SolisMonitor/SolisMonitor.exe` |
-| [ESP32-S3 OTA firmware](https://github.com/Solismuchengxue/Solis_Monitor/releases/download/v0.9.6-beta.4/solis_monitor-0.1.5-esp32s3.bin) | LAN upgrade for devices already migrated to the dual-OTA layout |
-| [SHA-256 manifest](https://github.com/Solismuchengxue/Solis_Monitor/releases/download/v0.9.6-beta.4/SHA256SUMS.txt) | Download-integrity verification |
+| [Windows x64 installer](https://github.com/Solismuchengxue/Solis_Monitor/releases/download/v0.9.6-beta.5/SolisMonitor-0.9.6-win-x64-setup.exe) | Standard installation, Start menu entry and optional desktop shortcut |
+| [Windows x64 portable package](https://github.com/Solismuchengxue/Solis_Monitor/releases/download/v0.9.6-beta.5/SolisMonitor-0.9.6-win-x64-portable.zip) | Extract and run `SolisMonitor/SolisMonitor.exe` |
+| [ESP32-S3 OTA firmware](https://github.com/Solismuchengxue/Solis_Monitor/releases/download/v0.9.6-beta.5/solis_monitor-0.1.5-esp32s3.bin) | LAN upgrade for devices already migrated to the dual-OTA layout |
+| [SHA-256 manifest](https://github.com/Solismuchengxue/Solis_Monitor/releases/download/v0.9.6-beta.5/SHA256SUMS.txt) | Download-integrity verification |
 
 Windows requires x64 Windows 10 version 1809 or later and the [.NET 10 Desktop Runtime](https://dotnet.microsoft.com/en-us/download/dotnet/10.0). Native notifications additionally use [Windows App Runtime 2.3.1](https://learn.microsoft.com/en-us/windows/apps/windows-app-sdk/downloads). Administrator privileges are recommended for complete hardware-sensor access.
 
