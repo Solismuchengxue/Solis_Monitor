@@ -4,9 +4,11 @@ using System;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using System.Windows.Threading;
 using H.NotifyIcon;
 using LibreHardwareMonitor.Solis.Desktop;
 using LibreHardwareMonitor.Solis.DeviceControl;
+using LibreHardwareMonitor.Solis.Startup;
 
 namespace LibreHardwareMonitor.UI.WpfViews;
 
@@ -21,6 +23,8 @@ public sealed class SolisTaskbarHost : IDisposable
     private readonly MenuItem _openDeviceWebUiItem;
     private readonly MenuItem _silentStartupItem;
     private readonly TaskbarIcon _taskbarIcon;
+    private readonly DispatcherTimer _trayIconRetryTimer;
+    private readonly TrayIconStartupRetryController _trayIconStartup;
 
     public SolisTaskbarHost(
         Action showWindow,
@@ -79,12 +83,22 @@ public sealed class SolisTaskbarHost : IDisposable
             ContextMenu = contextMenu
         };
         _taskbarIcon.TrayLeftMouseUp += (_, _) => _showWindow();
-        _taskbarIcon.ForceCreate(enablesEfficiencyMode: false);
+        _trayIconStartup = new TrayIconStartupRetryController(
+            () => _taskbarIcon.ForceCreate(enablesEfficiencyMode: false),
+            _showWindow,
+            StartupResiliencePolicy.TrayIconMaximumAttempts);
+        _trayIconRetryTimer = new DispatcherTimer
+        {
+            Interval = StartupResiliencePolicy.TrayIconRetryInterval
+        };
+        _trayIconRetryTimer.Tick += (_, _) => TryCreateTaskbarIcon();
+        TryCreateTaskbarIcon();
         RefreshState();
     }
 
     public void Dispose()
     {
+        _trayIconRetryTimer.Stop();
         _taskbarIcon.Dispose();
     }
 
@@ -100,6 +114,19 @@ public sealed class SolisTaskbarHost : IDisposable
         DeviceTrayPresentation? presentation = _getDevicePresentation?.Invoke();
         _openDeviceWebUiItem.IsEnabled =
             presentation?.CanOpenWebUi == true && _openDeviceWebUi is not null;
+    }
+
+    private void TryCreateTaskbarIcon()
+    {
+        TrayIconCreationResult result = _trayIconStartup.TryCreate();
+        if (result == TrayIconCreationResult.RetryPending)
+        {
+            if (!_trayIconRetryTimer.IsEnabled)
+                _trayIconRetryTimer.Start();
+            return;
+        }
+
+        _trayIconRetryTimer.Stop();
     }
 
     private void OpenDeviceWebUi()

@@ -111,6 +111,17 @@ public class StartupManager
                 }
             }
 
+            foreach (Microsoft.Win32.TaskScheduler.Trigger trigger in
+                     task.Definition.Triggers)
+            {
+                if (trigger is not LogonTrigger logonTrigger)
+                    continue;
+
+                changed |= StartupResiliencePolicy.EnsureLogonDelay(
+                    logonTrigger.Delay,
+                    value => logonTrigger.Delay = value);
+            }
+
             if (changed)
                 task.RegisterChanges();
             DeleteTask(LegacyStartupName);
@@ -201,7 +212,10 @@ public class StartupManager
         TaskDefinition taskDefinition = TaskService.Instance.NewTask();
         taskDefinition.RegistrationInfo.Description = "Starts LibreHardwareMonitor on Windows startup.";
 
-        taskDefinition.Triggers.Add(new LogonTrigger());
+        taskDefinition.Triggers.Add(new LogonTrigger
+        {
+            Delay = StartupResiliencePolicy.LogonDelay
+        });
 
         taskDefinition.Settings.StartWhenAvailable = true;
         taskDefinition.Settings.DisallowStartIfOnBatteries = false;

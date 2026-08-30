@@ -58,6 +58,26 @@ Runner 中暴露 `SolisMonitor.NotificationHost` 未被主项目 Restore 覆盖�
 - 证据：提交 `ac082a2`；Release x64 构建 0 警告、0 错误；桌面冒烟测试 128/128 通过。
 - 发布：`v0.9.6-beta.5` 已发布，2026-08-25 完成人工安装和实际显示验收并调整为 GitHub Latest Release。
 
+## 最近收口：开机托盘启动韧性
+
+### RUNTIME-003 避免登录阶段托盘创建失败导致进程退出
+
+状态：`[x]`（源码与本地回归）
+
+问题证据（2026-08-30）：Windows 登录任务 `SolisMonitor` 已在开机后触发，目标、
+`--windows-startup` 参数和工作目录均正确，但任务结果为 `0xE0434352`；应用事件记录
+`H.NotifyIcon.Core.TrayIcon.Create()` 抛出 `System.InvalidOperationException: TryCreate failed`。
+任务与 `explorer.exe` 在同一秒启动，未处理的托盘创建临时失败导致整个进程退出。
+
+完成结果：登录任务统一增加 15 秒延迟，既有任务在应用下次正常启动时自动补齐；
+托盘创建失败后每 2 秒重试，最多尝试 30 次，成功后停止重试，耗尽后只显示一次控制台
+作为可操作回退；非预期异常仍继续上抛。新增四项启动韧性测试，.NET 10 x64 Release
+构建为 0 警告、0 错误，桌面冒烟测试 132/132 通过。
+
+当前边界：本轮未部署、未启动 Solis Monitor、未改写现场计划任务，也未执行真实注销或
+冷启动验收；`D:\Solis Monitor` 的 Beta 5 安装载荷仍不包含本修复，部署和现场登录验证
+需要单独授权。
+
 ## 当前里程碑：后台采集可靠性加固
 
 ### RUNTIME-002 隔离后台采集异常并建立有界日志

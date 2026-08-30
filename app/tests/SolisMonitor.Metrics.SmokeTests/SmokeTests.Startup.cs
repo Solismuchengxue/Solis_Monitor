@@ -291,6 +291,126 @@ static void SilentStartupOnlyAffectsWindowsStartup()
         "关闭静默启动后，Windows 开机启动也应显示控制台");
 }
 
+static void TrayIconStartupRetriesTransientFailuresUntilCreated()
+{
+    int createAttempts = 0;
+    int fallbackShows = 0;
+    var controller = new TrayIconStartupRetryController(
+        () =>
+        {
+            createAttempts++;
+            if (createAttempts < 3)
+                throw new InvalidOperationException("tray unavailable");
+        },
+        () => fallbackShows++,
+        maximumAttempts: 3);
+
+    Equal(
+        TrayIconCreationResult.RetryPending,
+        controller.TryCreate(),
+        "首次托盘创建失败后应等待重试");
+    Equal(
+        TrayIconCreationResult.RetryPending,
+        controller.TryCreate(),
+        "未达到上限的连续失败仍应等待重试");
+    Equal(
+        TrayIconCreationResult.Created,
+        controller.TryCreate(),
+        "通知区域恢复后应完成托盘创建");
+    Equal(3, createAttempts, "托盘创建成功前的尝试次数错误");
+    Equal(0, fallbackShows, "成功重试不得显示故障回退窗口");
+
+    Equal(
+        TrayIconCreationResult.Created,
+        controller.TryCreate(),
+        "托盘创建成功后重复调用应保持幂等");
+    Equal(3, createAttempts, "成功后不得再次调用托盘创建入口");
+}
+
+static void TrayIconStartupShowsFallbackOnceAfterRetryExhaustion()
+{
+    int createAttempts = 0;
+    int fallbackShows = 0;
+    var controller = new TrayIconStartupRetryController(
+        () =>
+        {
+            createAttempts++;
+            throw new InvalidOperationException("tray unavailable");
+        },
+        () => fallbackShows++,
+        maximumAttempts: 3);
+
+    Equal(
+        TrayIconCreationResult.RetryPending,
+        controller.TryCreate(),
+        "首次托盘创建失败后应等待重试");
+    Equal(
+        TrayIconCreationResult.RetryPending,
+        controller.TryCreate(),
+        "达到上限前不得提前放弃托盘创建");
+    Equal(
+        TrayIconCreationResult.FallbackVisible,
+        controller.TryCreate(),
+        "重试耗尽后应显示控制台作为可操作回退");
+    Equal(3, createAttempts, "托盘重试必须受最大尝试次数约束");
+    Equal(1, fallbackShows, "重试耗尽后只应显示一次回退窗口");
+
+    Equal(
+        TrayIconCreationResult.FallbackVisible,
+        controller.TryCreate(),
+        "重试耗尽后的重复调用应保持终态");
+    Equal(3, createAttempts, "重试耗尽后不得继续创建托盘");
+    Equal(1, fallbackShows, "重试耗尽后不得重复显示回退窗口");
+}
+
+static void TrayIconStartupPropagatesUnexpectedFailures()
+{
+    int fallbackShows = 0;
+    var controller = new TrayIconStartupRetryController(
+        () => throw new ApplicationException("unexpected"),
+        () => fallbackShows++,
+        maximumAttempts: 3);
+
+    bool propagated = false;
+    try
+    {
+        controller.TryCreate();
+    }
+    catch (ApplicationException)
+    {
+        propagated = true;
+    }
+
+    True(propagated, "非托盘临时异常必须继续上抛");
+    Equal(0, fallbackShows, "非托盘临时异常不得进入静默回退");
+}
+
+static void StartupTaskPolicyAddsLogonDelayOnlyWhenRequired()
+{
+    int updates = 0;
+    TimeSpan appliedDelay = TimeSpan.Zero;
+
+    True(
+        StartupResiliencePolicy.EnsureLogonDelay(
+            TimeSpan.Zero,
+            value =>
+            {
+                updates++;
+                appliedDelay = value;
+            }),
+        "无延迟登录任务应被更新");
+    Equal(TimeSpan.FromSeconds(15), appliedDelay,
+        "登录任务应避开 Explorer 同秒启动窗口");
+    Equal(1, updates, "无延迟任务只应更新一次");
+
+    True(
+        !StartupResiliencePolicy.EnsureLogonDelay(
+            TimeSpan.FromSeconds(15),
+            _ => updates++),
+        "已有目标延迟的登录任务不应重复更新");
+    Equal(1, updates, "目标延迟任务不得产生额外写入");
+}
+
 static void DeveloperModeUnlockRequiresTenClicks()
 {
     var tracker = new DeveloperModeUnlockTracker();
