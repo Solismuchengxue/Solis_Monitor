@@ -95,7 +95,9 @@ internal static class JsonlMarkerReader
             if (lineMatches && lineStart < scanLength)
                 PublishLine(lineReader, lineStart, scanLength, onMatch);
 
-            return scanLength;
+            // An EOF tail may still be in flight. Preserve immediate parsing of a
+            // complete unterminated record, but replay its bytes on the next append.
+            return lineStart;
         }
         finally
         {

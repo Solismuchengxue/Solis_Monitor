@@ -28,23 +28,20 @@ public sealed class CodexMetricsCollector
     private readonly object _sync = new();
     private readonly Dictionary<string, SessionDescriptor> _sessionCache =
         new(StringComparer.OrdinalIgnoreCase);
-    private readonly Dictionary<string, long> _weeklyReadLengths =
+    private readonly Dictionary<string, SessionReading> _sessionReadings =
         new(StringComparer.OrdinalIgnoreCase);
     private readonly Func<CodexAccountReading?>? _accountUsageReader;
     private readonly CodexWeeklyUsageTracker? _weeklyUsageTracker;
     private readonly CodexLocalWeeklyUsageReader _localWeeklyUsageReader;
 
     private DateTimeOffset _nextRefreshUtc = DateTimeOffset.MinValue;
-    private string? _activePath;
     private string? _activeTask;
     private string? _activeProject;
     private string? _activeModel;
     private string? _activeEffort;
-    private long _readLength;
     private TokenSample? _sample;
     private WeeklySample? _mainWeeklySample;
     private WeeklySample? _sparkWeeklySample;
-    private string? _lastTokenDiagnostic;
     private string? _lastErrorCategory;
     private DateTimeOffset _nextAccountUsageRefreshUtc = DateTimeOffset.MinValue;
     private long? _accountLifetimeTokens;
@@ -211,6 +208,9 @@ public sealed class CodexMetricsCollector
             string sessionsRoot = Path.Combine(_codexRoot, "sessions");
             if (!Directory.Exists(sessionsRoot))
             {
+                _sessionCache.Clear();
+                _sessionReadings.Clear();
+                ClearActiveSession();
                 _lastErrorCategory = "SessionsNotFound";
                 return;
             }
@@ -219,41 +219,45 @@ public sealed class CodexMetricsCollector
                 Path.Combine(_codexRoot, "session_index.jsonl"));
             IReadOnlyList<SessionFile> sessions = FindSessions(
                 sessionsRoot, out bool invalidSessionMetadataSeen);
+            ReadSessionEvents(sessions);
             SessionDescriptor? active = sessions
                 .Where(session => session.Descriptor.IsMainThread)
+                .OrderByDescending(session => _sessionReadings[session.Descriptor.Path].ActivityUtc)
+                .ThenByDescending(session => session.WriteTimeUtc)
+                .ThenBy(session => session.Descriptor.Path, StringComparer.OrdinalIgnoreCase)
                 .Select(session => session.Descriptor)
                 .FirstOrDefault();
             if (active is null)
             {
+                ClearActiveSession();
                 _lastErrorCategory = invalidSessionMetadataSeen
                     ? "SessionMetadataInvalid"
                     : "SessionNotFound";
                 return;
             }
 
-            FileInfo file = new(active.Path);
-            if (!string.Equals(_activePath, active.Path, StringComparison.OrdinalIgnoreCase) ||
-                file.Length < _readLength)
-            {
-                _activePath = active.Path;
-                _readLength = 0;
-                _sample = null;
-                _activeModel = null;
-                _activeEffort = null;
-                _lastTokenDiagnostic = null;
-            }
-
+            SessionReading reading = _sessionReadings[active.Path];
             _activeTask = TaskName(active, titles);
             _activeProject = ProjectName(active);
-            ReadNewTokenEvents(active.Path);
-            ReadGlobalWeeklyEvents(sessions);
-            _lastErrorCategory = _lastTokenDiagnostic ??
+            _activeModel = reading.Model;
+            _activeEffort = reading.Effort;
+            _sample = reading.Sample;
+            _lastErrorCategory = reading.Diagnostic ??
                                  (_sample is null ? "TokenCountNotFound" : null);
         }
         catch (Exception exception) when (IsExpectedReadFailure(exception))
         {
             _lastErrorCategory = exception.GetType().Name;
         }
+    }
+
+    private void ClearActiveSession()
+    {
+        _activeTask = null;
+        _activeProject = null;
+        _activeModel = null;
+        _activeEffort = null;
+        _sample = null;
     }
 
     private IReadOnlyList<SessionFile> FindSessions(
@@ -266,6 +270,17 @@ public sealed class CodexMetricsCollector
         foreach (string path in Directory.EnumerateFiles(
                      sessionsRoot, "*.jsonl", SearchOption.AllDirectories))
         {
+            FileInfo file = new(path);
+            long length = file.Length;
+            DateTime writeTime = file.LastWriteTimeUtc;
+            bool replaced = _sessionReadings.TryGetValue(path, out SessionReading? prior) &&
+                            (length < prior.Length ||
+                             (length == prior.Length && writeTime != prior.WriteTimeUtc));
+            if (replaced)
+            {
+                _sessionCache.Remove(path);
+                _sessionReadings.Remove(path);
+            }
             if (!_sessionCache.TryGetValue(path, out SessionDescriptor? descriptor))
             {
                 descriptor = ReadSessionDescriptor(path);
@@ -277,10 +292,16 @@ public sealed class CodexMetricsCollector
                 _sessionCache[path] = descriptor;
             }
 
-            sessions.Add(new SessionFile(descriptor, File.GetLastWriteTimeUtc(path)));
+            sessions.Add(new SessionFile(descriptor, writeTime, length));
         }
 
-        sessions.Sort((left, right) => right.WriteTimeUtc.CompareTo(left.WriteTimeUtc));
+        var present = new HashSet<string>(sessions.Select(session => session.Descriptor.Path),
+            StringComparer.OrdinalIgnoreCase);
+        foreach (string missing in _sessionCache.Keys.Where(path => !present.Contains(path)).ToArray())
+        {
+            _sessionCache.Remove(missing);
+            _sessionReadings.Remove(missing);
+        }
         return sessions;
     }
 
@@ -315,95 +336,66 @@ public sealed class CodexMetricsCollector
         }
     }
 
-    private void ReadNewTokenEvents(string path)
-    {
-        long fileLength = new FileInfo(path).Length;
-        if (_readLength > fileLength)
-            _readLength = 0;
-
-        _readLength = JsonlMarkerReader.ReadMatchingLines(
-            path,
-            _readLength,
-            line =>
-            {
-                if (line.IndexOf("\"turn_context\"", StringComparison.Ordinal) >= 0)
-                {
-                    ReadTurnContext(line);
-                    return;
-                }
-                if (line.IndexOf("\"token_count\"", StringComparison.Ordinal) < 0)
-                    return;
-
-                ParsedTokenEvent? parsed = ParseTokenCount(line, out string? diagnostic);
-                if (parsed is null)
-                {
-                    if (diagnostic is not null)
-                        _lastTokenDiagnostic = diagnostic;
-                    return;
-                }
-
-                if (parsed.ContextUsedPercent.HasValue || parsed.ContextUsedK.HasValue ||
-                    parsed.ContextWindowK.HasValue || parsed.TotalTokens.HasValue)
-                {
-                    _sample = new TokenSample(
-                        parsed.TimestampUtc,
-                        parsed.ContextUsedPercent,
-                        parsed.ContextUsedK,
-                        parsed.ContextWindowK,
-                        parsed.TotalTokens);
-                    _lastTokenDiagnostic = diagnostic;
-                }
-
-                foreach (ParsedQuotaSnapshot quota in parsed.Quotas)
-                    UpdateWeeklySample(quota);
-            },
-            "\"turn_context\"",
-            "\"token_count\"");
-
-        _weeklyReadLengths[path] = _readLength;
-    }
-
-    private void ReadGlobalWeeklyEvents(IReadOnlyList<SessionFile> sessions)
+    private void ReadSessionEvents(IReadOnlyList<SessionFile> sessions)
     {
         foreach (SessionFile session in sessions)
         {
-            DateTimeOffset? oldestCompleteTracked = OldestCompleteWeeklyTimestamp;
-            if (oldestCompleteTracked is not null &&
-                session.WriteTimeUtc < oldestCompleteTracked.Value.UtcDateTime)
+            string path = session.Descriptor.Path;
+            if (!_sessionReadings.TryGetValue(path, out SessionReading? reading))
             {
-                break;
+                reading = new SessionReading();
+                _sessionReadings[path] = reading;
             }
-
-            FileInfo file = new(session.Descriptor.Path);
-            long readLength = _weeklyReadLengths.TryGetValue(file.FullName, out long cachedLength) &&
-                              cachedLength <= file.Length
-                ? cachedLength
-                : 0;
-            if (readLength == file.Length)
+            if (reading.Length == session.Length)
                 continue;
-
-            _weeklyReadLengths[file.FullName] = JsonlMarkerReader.ReadMatchingLines(
-                file.FullName,
-                readLength,
+            // Length changes remain observable when an open writer leaves mtime stale.
+            reading.ReadLength = JsonlMarkerReader.ReadMatchingLines(
+                path,
+                reading.ReadLength,
                 line =>
                 {
-                    ParsedTokenEvent? parsed = ParseTokenCount(line, out _);
-                    if (parsed is null)
+                    if (line.IndexOf("\"turn_context\"", StringComparison.Ordinal) >= 0)
+                    {
+                        ReadTurnContext(line, reading);
                         return;
+                    }
+                    if (line.IndexOf("\"token_count\"", StringComparison.Ordinal) < 0)
+                        return;
+
+                    ParsedTokenEvent? parsed = ParseTokenCount(line, out string? diagnostic);
+                    if (parsed is null)
+                    {
+                        if (diagnostic is not null)
+                            reading.Diagnostic = diagnostic;
+                        return;
+                    }
+
+                    if (parsed.ContextUsedPercent.HasValue || parsed.ContextUsedK.HasValue ||
+                        parsed.ContextWindowK.HasValue || parsed.TotalTokens.HasValue)
+                    {
+                        if (reading.Sample is null || parsed.TimestampUtc >= reading.Sample.TimestampUtc)
+                        {
+                            reading.Sample = new TokenSample(
+                                parsed.TimestampUtc,
+                                parsed.ContextUsedPercent,
+                                parsed.ContextUsedK,
+                                parsed.ContextWindowK,
+                                parsed.TotalTokens);
+                            reading.Diagnostic = diagnostic;
+                        }
+                        if (reading.ActivityUtc is null || parsed.TimestampUtc > reading.ActivityUtc)
+                            reading.ActivityUtc = parsed.TimestampUtc;
+                    }
 
                     foreach (ParsedQuotaSnapshot quota in parsed.Quotas)
                         UpdateWeeklySample(quota);
                 },
+                "\"turn_context\"",
                 "\"token_count\"");
+            reading.Length = session.Length;
+            reading.WriteTimeUtc = session.WriteTimeUtc;
         }
     }
-
-    private DateTimeOffset? OldestCompleteWeeklyTimestamp =>
-        _mainWeeklySample is null || _sparkWeeklySample is null
-            ? null
-            : (_mainWeeklySample.TimestampUtc < _sparkWeeklySample.TimestampUtc
-                ? _mainWeeklySample.TimestampUtc
-                : _sparkWeeklySample.TimestampUtc);
 
     private void UpdateWeeklySample(ParsedQuotaSnapshot sample)
     {
@@ -743,26 +735,39 @@ public sealed class CodexMetricsCollector
         return null;
     }
 
-    private void ReadTurnContext(string line)
+    private static void ReadTurnContext(string line, SessionReading reading)
     {
         try
         {
             using JsonDocument document = JsonDocument.Parse(line);
             JsonElement root = document.RootElement;
             if (!TryString(root, "type", out string? type) || type != "turn_context" ||
-                !root.TryGetProperty("payload", out JsonElement payload))
+                !root.TryGetProperty("payload", out JsonElement payload) ||
+                payload.ValueKind != JsonValueKind.Object)
             {
                 return;
             }
 
+            bool validContext = false;
             if (TryString(payload, "model", out string? model) &&
                 model is not null &&
                 !string.IsNullOrWhiteSpace(model))
-                _activeModel = model.Trim();
+            {
+                reading.Model = model.Trim();
+                validContext = true;
+            }
             if (TryString(payload, "effort", out string? effort) &&
                 effort is not null &&
                 !string.IsNullOrWhiteSpace(effort))
-                _activeEffort = effort.Trim();
+            {
+                reading.Effort = effort.Trim();
+                validContext = true;
+            }
+            if (validContext && TryString(root, "timestamp", out string? timestampText) &&
+                DateTimeOffset.TryParse(timestampText, CultureInfo.InvariantCulture,
+                    DateTimeStyles.RoundtripKind, out DateTimeOffset timestamp) &&
+                (reading.ActivityUtc is null || timestamp > reading.ActivityUtc))
+                reading.ActivityUtc = timestamp.ToUniversalTime();
         }
         catch (JsonException)
         {
@@ -835,7 +840,19 @@ public sealed class CodexMetricsCollector
         string? Cwd,
         bool IsMainThread);
 
-    private sealed record SessionFile(SessionDescriptor Descriptor, DateTime WriteTimeUtc);
+    private sealed record SessionFile(SessionDescriptor Descriptor, DateTime WriteTimeUtc, long Length);
+
+    private sealed class SessionReading
+    {
+        public long ReadLength { get; set; }
+        public long Length { get; set; } = -1;
+        public DateTime WriteTimeUtc { get; set; }
+        public DateTimeOffset? ActivityUtc { get; set; }
+        public TokenSample? Sample { get; set; }
+        public string? Model { get; set; }
+        public string? Effort { get; set; }
+        public string? Diagnostic { get; set; }
+    }
 
     private sealed record TokenSample(
         DateTimeOffset TimestampUtc,

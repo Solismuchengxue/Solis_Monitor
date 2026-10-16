@@ -61,13 +61,16 @@ public sealed class CodexLocalWeeklyUsageReader
                 state = new FileState();
                 _files[path] = state;
             }
-            else if (file.Length < state.ReadLength)
+            else if (file.Length < state.ObservedLength)
             {
                 _totalTokens -= state.Contribution;
                 state = new FileState();
                 _files[path] = state;
             }
 
+            // The replay offset can precede an already counted, unterminated tail.
+            // Detect truncation against the observed file size, not that offset.
+            state.ObservedLength = file.Length;
             ReadNewEvents(path, state);
         }
 
@@ -223,6 +226,8 @@ public sealed class CodexLocalWeeklyUsageReader
     private sealed class FileState
     {
         public long ReadLength { get; set; }
+
+        public long ObservedLength { get; set; }
 
         public long? PreviousTotalTokens { get; set; }
 

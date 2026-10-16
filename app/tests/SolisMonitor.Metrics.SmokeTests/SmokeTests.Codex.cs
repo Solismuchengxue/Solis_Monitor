@@ -644,7 +644,16 @@ static void CodexWeeklyQuotaDoesNotRegressAcrossProjectSwitch()
         Near(0, initial.MainQuota?.RemainingPercent, "周额度耗尽时应显示 0%");
         Near(0, initial.WeeklyRemainingPercent, "周额度保持向后兼容显示主周余量");
 
-        File.SetLastWriteTimeUtc(switched, now.AddSeconds(6).UtcDateTime);
+        File.AppendAllLines(switched,
+        [
+            JsonSerializer.Serialize(new
+            {
+                timestamp = now.AddSeconds(6),
+                type = "turn_context",
+                payload = new { model = "gpt-5.3-codex", effort = "medium" }
+            })
+        ]);
+        File.SetLastWriteTimeUtc(switched, now.AddMinutes(-4).UtcDateTime);
 
         CodexMetricsReading afterSwitch = collector.Read(now.AddSeconds(6));
         Equal("切换后的项目", afterSwitch.LastActiveTask, "项目名称没有随最后活动任务切换");
