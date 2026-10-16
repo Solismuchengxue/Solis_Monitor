@@ -32,6 +32,7 @@ typedef struct {
     float context_used, context_used_k, context_window_k;
     float total_tokens, weekly_used_tokens;
     float main_weekly_remaining, spark_weekly_remaining;
+    double credit_balance, full_resets_available;
     char main_quota_name[32];
     char spark_quota_name[32];
     char main_quota_reset_at[24];

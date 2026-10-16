@@ -69,6 +69,27 @@ static void copy_short_text(char *destination, size_t destination_size,
     destination[length] = '\0';
 }
 
+static void format_credit_balance(char *destination, size_t size, double balance)
+{
+    if (!isfinite(balance) || balance < 0) {
+        snprintf(destination, size, "待更新");
+        return;
+    }
+    char digits[24];
+    int length = snprintf(digits, sizeof(digits), "%.0f", balance);
+    if (length <= 0 || length > 18) {
+        snprintf(destination, size, "%.3g", balance);
+        return;
+    }
+    size_t output = 0;
+    for (int i = 0; i < length && output + 1 < size; ++i) {
+        destination[output++] = digits[i];
+        if ((length - i - 1) % 3 == 0 && i + 1 < length && output + 1 < size)
+            destination[output++] = ',';
+    }
+    destination[output] = '\0';
+}
+
 static void draw_pc(renderer_surface_t *surface, const dashboard_state_t *state)
 {
     const bitmap_font_t *font20 = ui_assets_font(20);
@@ -226,21 +247,16 @@ static void draw_codex(renderer_surface_t *surface, const dashboard_state_t *sta
     renderer_draw_text(surface, 448, 160, details, font20, label);
     renderer_fill_rect(surface, (renderer_rect_t){448, 188, 312, 2}, track);
 
-    renderer_draw_text(surface, 448, 218, "GPT-5.3-Codex-Spark", font20, label);
-    if (isfinite(codex->spark_weekly_remaining))
-    {
-        snprintf(value, sizeof(value), "%.0f%%", codex->spark_weekly_remaining);
-    }
+    renderer_draw_text(surface, 448, 218, "额度余额", font20, label);
+    format_credit_balance(value, sizeof(value), codex->credit_balance);
+    renderer_draw_text(surface, 448, 254, value, font24, cyan);
+    if (isfinite(codex->full_resets_available) && codex->full_resets_available >= 0 &&
+        codex->full_resets_available <= 2147483647.0 &&
+        floor(codex->full_resets_available) == codex->full_resets_available)
+        snprintf(details, sizeof(details), "完全重置可用 %.0f 次", codex->full_resets_available);
     else
-    {
-        snprintf(value, sizeof(value), "待更新");
-    }
-    renderer_draw_text(surface, 700, 218, value, font24, white);
-    if (isfinite(codex->spark_weekly_remaining))
-        renderer_draw_progress(surface, (renderer_rect_t){448, 240, 312, 8},
-                               (unsigned)codex->spark_weekly_remaining, track, purple);
-    snprintf(details, sizeof(details), "重置 %s", strlen(codex->spark_quota_reset_at) > 0 ? codex->spark_quota_reset_at : "--");
-    renderer_draw_text(surface, 448, 272, details, font20, label);
+        snprintf(details, sizeof(details), "完全重置 待更新");
+    renderer_draw_text(surface, 448, 294, details, font20, label);
 
     if (isfinite(environment->weather_icon) && environment->weather_icon >= 0 &&
         environment->weather_icon < UI_ASSETS_WEATHER_ICON_COUNT) {

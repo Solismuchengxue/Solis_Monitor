@@ -39,6 +39,23 @@ TEST_CASE("dashboard empty state clears all fields", "[dashboard]")
     TEST_ASSERT_TRUE(isnan(state.system.memory_temp_c));
     TEST_ASSERT_TRUE(isnan(state.codex.context_used));
     TEST_ASSERT_TRUE(isnan(state.codex.main_weekly_remaining));
+    TEST_ASSERT_TRUE(isnan(state.codex.credit_balance));
+    TEST_ASSERT_TRUE(isnan(state.codex.full_resets_available));
     TEST_ASSERT_TRUE(isnan(state.environment.indoor_temp_c));
     TEST_ASSERT_TRUE(isnan(state.environment.humidity));
+}
+
+TEST_CASE("account credit validation preserves zero and rejects invalid values", "[dashboard]")
+{
+    dashboard_state_t state = {0};
+    state.codex.credit_balance = -1;
+    state.codex.full_resets_available = 1.5f;
+    dashboard_state_sanitize(&state);
+    TEST_ASSERT_TRUE(isnan(state.codex.credit_balance));
+    TEST_ASSERT_TRUE(isnan(state.codex.full_resets_available));
+    state.codex.credit_balance = 0;
+    state.codex.full_resets_available = 0;
+    dashboard_state_sanitize(&state);
+    TEST_ASSERT_EQUAL_FLOAT(0, state.codex.credit_balance);
+    TEST_ASSERT_EQUAL_FLOAT(0, state.codex.full_resets_available);
 }

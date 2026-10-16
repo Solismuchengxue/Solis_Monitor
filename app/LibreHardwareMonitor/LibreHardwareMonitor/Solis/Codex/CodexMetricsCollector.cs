@@ -30,7 +30,7 @@ public sealed class CodexMetricsCollector
         new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, long> _weeklyReadLengths =
         new(StringComparer.OrdinalIgnoreCase);
-    private readonly Func<long?>? _accountUsageReader;
+    private readonly Func<CodexAccountReading?>? _accountUsageReader;
     private readonly CodexWeeklyUsageTracker? _weeklyUsageTracker;
     private readonly CodexLocalWeeklyUsageReader _localWeeklyUsageReader;
 
@@ -48,6 +48,8 @@ public sealed class CodexMetricsCollector
     private string? _lastErrorCategory;
     private DateTimeOffset _nextAccountUsageRefreshUtc = DateTimeOffset.MinValue;
     private long? _accountLifetimeTokens;
+    private double? _creditBalance;
+    private int? _availableFullResets;
     private long? _accountWeeklyUsedTokens;
     private long? _localWeeklyUsedTokens;
     private long? _weeklyUsedTokens;
@@ -60,20 +62,27 @@ public sealed class CodexMetricsCollector
 
     public CodexMetricsCollector(string? settingsDirectory)
         : this(DefaultCodexRoot(), TimeSpan.FromMinutes(10),
-               CodexAccountUsageReader.ReadLifetimeTokens,
+               CodexAccountUsageReader.ReadAccount,
                new CodexWeeklyUsageTracker(settingsDirectory))
     {
     }
 
     public CodexMetricsCollector(string codexRoot, TimeSpan staleAfter)
-        : this(codexRoot, staleAfter, null, null)
+        : this(codexRoot, staleAfter, (Func<CodexAccountReading?>?)null, null)
     {
     }
 
-    private CodexMetricsCollector(
+    private CodexMetricsCollector(string codexRoot, TimeSpan staleAfter,
+        Func<long?> accountUsageReader, CodexWeeklyUsageTracker? weeklyUsageTracker)
+        : this(codexRoot, staleAfter,
+            () => new CodexAccountReading(accountUsageReader(), null, null), weeklyUsageTracker)
+    {
+    }
+
+    public CodexMetricsCollector(
         string codexRoot,
         TimeSpan staleAfter,
-        Func<long?>? accountUsageReader,
+        Func<CodexAccountReading?>? accountUsageReader,
         CodexWeeklyUsageTracker? weeklyUsageTracker)
     {
         if (string.IsNullOrWhiteSpace(codexRoot))
@@ -138,7 +147,9 @@ public sealed class CodexMetricsCollector
                 _activeModel,
                 _activeEffort,
                 _accountUsageReader is null ? _sample?.TotalTokens : _accountLifetimeTokens,
-                _weeklyUsedTokens);
+                _weeklyUsedTokens,
+                _creditBalance,
+                _availableFullResets);
         }
     }
 
@@ -153,7 +164,7 @@ public sealed class CodexMetricsCollector
         _nextAccountUsageRefreshUtc = utcNow.Add(AccountUsageRetryInterval);
         _ = Task.Run(() =>
         {
-            long? value = null;
+            CodexAccountReading? value = null;
             try
             {
                 value = _accountUsageReader();
@@ -164,16 +175,19 @@ public sealed class CodexMetricsCollector
 
             lock (_sync)
             {
-                if (value is >= 0)
+                _creditBalance = value?.CreditBalance;
+                _availableFullResets = value?.AvailableFullResets;
+                if (value?.LifetimeTokens is >= 0)
                 {
-                    _accountLifetimeTokens = value;
+                    _accountLifetimeTokens = value.LifetimeTokens;
                     _accountWeeklyUsedTokens = _weeklyUsageTracker?.Update(
-                        value.Value,
+                        value.LifetimeTokens.Value,
                         _mainWeeklySample?.ResetAtLocal);
                     UpdateWeeklyUsedTokens();
                 }
                 _nextAccountUsageRefreshUtc = DateTimeOffset.UtcNow.Add(
-                    value.HasValue ? AccountUsageSuccessInterval : AccountUsageRetryInterval);
+                    value?.CreditBalance.HasValue == true && value.AvailableFullResets.HasValue
+                        ? AccountUsageSuccessInterval : AccountUsageRetryInterval);
             }
             Interlocked.Exchange(ref _accountUsageRefreshRunning, 0);
         });

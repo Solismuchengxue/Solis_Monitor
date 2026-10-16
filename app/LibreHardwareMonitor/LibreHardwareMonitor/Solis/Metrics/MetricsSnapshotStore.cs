@@ -138,5 +138,7 @@ public sealed class MetricsSnapshotStore
         reading.MainQuota?.ResetAtLocal,
         MetricReading.From(reading.SparkQuota?.RemainingPercent),
         reading.SparkQuota?.Name,
-        reading.SparkQuota?.ResetAtLocal);
+        reading.SparkQuota?.ResetAtLocal,
+        reading.CreditBalance,
+        reading.AvailableFullResets);
 }

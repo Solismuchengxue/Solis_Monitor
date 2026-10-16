@@ -67,9 +67,16 @@ OTA 固件端先检查内容长度、ESP 镜像头、ESP32-S3 芯片 ID、`solis
 - `task`、`model`、`reasoning_effort`；
 - `context_used`、`context_used_k`、`context_window_k`、`total_tokens`；
 - `main_weekly_remaining`、`main_quota_name`、`main_quota_reset_at`；
-- `spark_weekly_remaining`、`spark_quota_name`、`spark_quota_reset_at`。
+- `spark_weekly_remaining`、`spark_quota_name`、`spark_quota_reset_at`（保留旧固件兼容）；
+- `credit_balance`：有限非负 number 或 `null`，账户额度余额，不是 Token 数；
+- `full_resets_available`：非负 int32 或 `null`，完全重置可用次数。
 
 `weekly_remaining` 是旧 schema 1 的主周额度别名。若同时存在 `main_weekly_remaining`，新字段覆盖旧别名；若新字段缺失，固件保留旧别名值。
+
+两个账户新字段均为 schema 1 可选扩展，缺失或 `null` 时清除旧值并显示“待更新”，
+不能把未知转换成零。负余额、负数或非整数次数降级为未知，错误 JSON 类型仍按协议
+事务拒绝。新字段不依赖新增 `availability` 标志，其可用性由数值/`null` 决定。
+新 UI 只替换原 Spark 区域，主周额度不变；旧固件可忽略新字段，但不会出现新显示。
 
 ## `environment`
 

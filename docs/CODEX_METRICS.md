@@ -1,6 +1,6 @@
 # Codex 指标采集设计
 
-本文说明 Solis Monitor 如何取得 Codex 的项目、模型、上下文、周额度和账户累计 Token。实现入口为：
+本文说明 Solis Monitor 如何取得 Codex 的项目、模型、上下文、主周额度、额度余额、完全重置可用次数和账户累计 Token。实现入口为：
 
 ```text
 app/LibreHardwareMonitor/LibreHardwareMonitor/Solis/Codex/CodexMetricsCollector.cs
@@ -49,9 +49,31 @@ app/LibreHardwareMonitor/LibreHardwareMonitor/Solis/Codex/CodexAccountUsageReade
 2. 启动 `codex.exe app-server --stdio`；
 3. 发送 `initialize`；
 4. 调用第一方方法 `account/usage/read`；
-5. 读取响应中的 `lifetimeTokens`，写入设备快照。
+5. 读取响应中的 `lifetimeTokens`，写入设备快照；
+6. 在同一短生命周期连接中调用 `account/rateLimits/read`，取得额度余额和重置次数，随后结束该连接。
 
-该流程复用 Codex 桌面版已有登录状态，不读取 `auth.json` 或其他认证文件。首次启动立即后台读取；成功后 15 分钟刷新，失败后 5 分钟重试，不阻塞桌面端 1 Hz 快照发布。2026-07-23 实测返回 `2,958,484,287`，小屏显示为 `2.96B`，与 Codex 桌面版个人资料中的 29.6 亿一致。
+该流程复用 Codex 桌面版已有登录状态，不读取 `auth.json` 或其他认证文件。首次启动立即后台读取；余额和重置次数均成功取得后 15 分钟刷新，否则 5 分钟重试，不阻塞桌面端 1 Hz 快照发布。2026-07-23 实测返回 `2,958,484,287`，当时小屏显示为 `2.96B`，与 Codex 桌面版个人资料中的 29.6 亿一致。
+
+## 额度余额与完全重置次数
+
+原 GPT-5.3-Codex-Spark 显示区域改为“额度余额”和“完全重置可用 N 次”；主周额度的
+数值、进度条、重置时间及采集口径不变。
+
+- 优先解析 `account/rateLimits/read` 响应中 `rateLimitsByLimitId.codex.credits.balance`；
+  旧响应没有该桶时兼容 `rateLimits.credits.balance`。余额可以是数字字符串，必须有限且非负。
+- 次数直接采用 `rateLimitResetCredits.availableCount`，不按可能截断的 `credits` 明细条数计算。
+  该值为非负整数；本轮账户只读核对的可用项为 Full reset。
+- 余额在屏幕端四舍五入到整数并按千位分隔，例如 `61925.898464` 显示 `61,926`；
+  原始协议仍传递小数，不把该数字解释为 Token、货币金额或周额度百分比。
+- 初次读取前、字段缺失或后续读取失败，对应位置显示“待更新”；真实 `0` 余额、`0` 次正常显示。
+  已有累计 Token 不因额度读取失败而清空。
+- 此功能只读展示，不调用重置消费接口，不自动使用重置次数，不修改 Codex 账户设置。
+
+PC 与固件均需更新。新固件兼容旧 PC 的 schema 1 载荷，但新位置因字段缺失显示待更新；
+旧固件会忽略新字段，仍显示旧 Spark 区域。可以利用现有局域网 OTA 更新小屏，实际部署、
+OTA 和设备验收是独立门禁，不由本地软件验证代替。
+
+字段参考：[Codex App Server 官方文档](https://learn.chatgpt.com/docs/app-server)。
 
 ## 周使用 Token
 
@@ -71,7 +93,7 @@ app/LibreHardwareMonitor/LibreHardwareMonitor/Solis/Codex/CodexAccountUsageReade
 
 ### 显式映射与降级规则
 
-当前本机真实样本确认了两种额度标识：
+历史本机样本确认了两种额度标识（保留解析兼容，新小屏不再显示 Spark 卡片）：
 
 | `limit_id` | 类别 | 固定显示名 |
 |---|---|---|
@@ -107,6 +129,7 @@ app/LibreHardwareMonitor/LibreHardwareMonitor/Solis/Codex/CodexAccountUsageReade
 - 子代理排除；
 - 上下文计算；
 - `account/usage/read` 的账户生命周期累计 Token 解析与空值处理；
+- `account/rateLimits/read` 的余额/重置次数解析、零与未知区分、失败刷新及设备字段传递；
 - 两个已知 `limit_id` 的显式分类与固定名称；
 - 未知且不含 `codex` 的未来 ID；
 - `10079` 分钟兼容窗口与 `300` 分钟非周窗口；

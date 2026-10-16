@@ -27,6 +27,7 @@ class AssetGenerationTests(unittest.TestCase):
             "配对码秒后刷新"
             "已成功配对PC已获得设备访问权限单击退出"
             "辽宁·大连"
+            "额度余额完全重置可用次"
         )
 
         self.assertEqual(set(runtime_text) - glyphs, set())

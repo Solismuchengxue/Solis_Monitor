@@ -1,4 +1,5 @@
 #include <math.h>
+#include <limits.h>
 
 #include "dashboard_state.h"
 
@@ -33,6 +34,8 @@ void dashboard_state_init_empty(dashboard_state_t *state)
     state->codex.weekly_used_tokens = NAN;
     state->codex.main_weekly_remaining = NAN;
     state->codex.spark_weekly_remaining = NAN;
+    state->codex.credit_balance = NAN;
+    state->codex.full_resets_available = NAN;
     state->environment.outdoor_low_c = NAN;
     state->environment.outdoor_high_c = NAN;
     state->environment.weather_icon = NAN;
@@ -59,5 +62,10 @@ void dashboard_state_sanitize(dashboard_state_t *state)
     state->codex.context_used = percent(state->codex.context_used);
     state->codex.main_weekly_remaining = percent(state->codex.main_weekly_remaining);
     state->codex.spark_weekly_remaining = percent(state->codex.spark_weekly_remaining);
+    if (!isfinite(state->codex.credit_balance) || state->codex.credit_balance < 0)
+        state->codex.credit_balance = NAN;
+    double resets = state->codex.full_resets_available;
+    if (!isfinite(resets) || resets < 0 || resets > INT_MAX || floor(resets) != resets)
+        state->codex.full_resets_available = NAN;
     state->environment.humidity = percent(state->environment.humidity);
 }

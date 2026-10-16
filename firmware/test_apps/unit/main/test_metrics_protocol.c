@@ -4,6 +4,7 @@
 
 #include "metrics_protocol.h"
 #include "unity.h"
+#include "cJSON.h"
 
 extern const char complete_json_start[]
     asm("_binary_metrics_complete_json_start");
@@ -15,6 +16,44 @@ static size_t complete_json_length(void)
     size_t length = (size_t)(complete_json_end - complete_json_start);
     if (length > 0 && complete_json_start[length - 1] == '\0') length--;
     return length;
+}
+
+TEST_CASE("account credits preserve main quota and missing values clear stale credits", "[metrics_protocol]")
+{
+    dashboard_state_t previous = {0}, next = {0};
+    metrics_metadata_t metadata = {0};
+    cJSON *root = cJSON_ParseWithLength(complete_json_start, complete_json_length());
+    TEST_ASSERT_NOT_NULL(root);
+    cJSON *codex = cJSON_GetObjectItemCaseSensitive(root, "codex");
+    cJSON_DeleteItemFromObjectCaseSensitive(codex, "main_weekly_remaining");
+    cJSON_AddNumberToObject(codex, "main_weekly_remaining", 81);
+    cJSON_AddNumberToObject(codex, "credit_balance", 61925.898464);
+    cJSON_AddNumberToObject(codex, "full_resets_available", 2);
+    char *json = cJSON_PrintUnformatted(root);
+    TEST_ASSERT_NOT_NULL(json);
+    TEST_ASSERT_EQUAL(ESP_OK, metrics_protocol_apply(json, strlen(json), &previous, &next, &metadata));
+    TEST_ASSERT_FLOAT_WITHIN(0.01, 61925.898464, next.codex.credit_balance);
+    TEST_ASSERT_EQUAL_FLOAT(2, next.codex.full_resets_available);
+    TEST_ASSERT_EQUAL_FLOAT(81, next.codex.main_weekly_remaining);
+    cJSON_free(json);
+
+    cJSON_SetNumberValue(cJSON_GetObjectItemCaseSensitive(codex, "credit_balance"), 0);
+    cJSON_SetNumberValue(cJSON_GetObjectItemCaseSensitive(codex, "full_resets_available"), 0);
+    json = cJSON_PrintUnformatted(root);
+    TEST_ASSERT_EQUAL(ESP_OK, metrics_protocol_apply(json, strlen(json), &next, &next, &metadata));
+    TEST_ASSERT_EQUAL_FLOAT(0, next.codex.credit_balance);
+    TEST_ASSERT_EQUAL_FLOAT(0, next.codex.full_resets_available);
+    cJSON_free(json);
+
+    cJSON_DeleteItemFromObjectCaseSensitive(codex, "credit_balance");
+    cJSON_DeleteItemFromObjectCaseSensitive(codex, "full_resets_available");
+    json = cJSON_PrintUnformatted(root);
+    TEST_ASSERT_EQUAL(ESP_OK, metrics_protocol_apply(json, strlen(json), &next, &next, &metadata));
+    TEST_ASSERT_TRUE(isnan(next.codex.credit_balance));
+    TEST_ASSERT_TRUE(isnan(next.codex.full_resets_available));
+    TEST_ASSERT_EQUAL_FLOAT(81, next.codex.main_weekly_remaining);
+    cJSON_free(json);
+    cJSON_Delete(root);
 }
 
 static void assert_unchanged(const dashboard_state_t *state, const dashboard_state_t *expected,

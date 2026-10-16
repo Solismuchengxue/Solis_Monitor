@@ -3,17 +3,62 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Globalization;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace LibreHardwareMonitor.Solis.Codex;
 
+public sealed record CodexAccountReading(long? LifetimeTokens, double? CreditBalance, int? AvailableFullResets);
+
 public static class CodexAccountUsageReader
 {
+    public static CodexAccountReading ParseAccountLimitsResponse(string? response)
+    {
+        var unknown = new CodexAccountReading(null, null, null);
+        if (string.IsNullOrWhiteSpace(response)) return unknown;
+        try
+        {
+            using JsonDocument document = JsonDocument.Parse(response);
+            JsonElement root = document.RootElement;
+            if (root.ValueKind != JsonValueKind.Object ||
+                !root.TryGetProperty("id", out var id) || id.ValueKind != JsonValueKind.Number ||
+                !id.TryGetInt32(out int responseId) || responseId != 3 ||
+                !root.TryGetProperty("result", out var result) || result.ValueKind != JsonValueKind.Object)
+                return unknown;
+            JsonElement limits = default;
+            if (result.TryGetProperty("rateLimitsByLimitId", out var buckets) &&
+                buckets.ValueKind == JsonValueKind.Object && buckets.TryGetProperty("codex", out var main))
+                limits = main;
+            else if (result.TryGetProperty("rateLimits", out var legacy))
+                limits = legacy;
+            double? balance = null;
+            if (limits.ValueKind == JsonValueKind.Object && limits.TryGetProperty("credits", out var credits) &&
+                credits.ValueKind == JsonValueKind.Object && credits.TryGetProperty("balance", out var amount))
+            {
+                string? text = amount.ValueKind == JsonValueKind.String ? amount.GetString() :
+                    amount.ValueKind == JsonValueKind.Number ? amount.GetRawText() : null;
+                if (double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out double value) &&
+                    double.IsFinite(value) && value >= 0)
+                    balance = value;
+            }
+            int? resets = null;
+            if (result.TryGetProperty("rateLimitResetCredits", out var resetCredits) &&
+                resetCredits.ValueKind == JsonValueKind.Object &&
+                resetCredits.TryGetProperty("availableCount", out var count) &&
+                count.ValueKind == JsonValueKind.Number && count.TryGetInt32(out int available) && available >= 0)
+                resets = available;
+            return new(null, balance, resets);
+        }
+        catch (JsonException) { return unknown; }
+    }
+
     private static readonly TimeSpan ResponseTimeout = TimeSpan.FromSeconds(20);
 
-    public static long? ReadLifetimeTokens()
+    public static long? ReadLifetimeTokens() => ReadAccount()?.LifetimeTokens;
+
+    public static CodexAccountReading? ReadAccount()
     {
         string? executable = FindCodexExecutable();
         if (executable is null)
@@ -49,9 +94,13 @@ public static class CodexAccountUsageReader
             process.StandardInput.WriteLine(
                 "{\"id\":2,\"method\":\"account/usage/read\",\"params\":null}");
             process.StandardInput.Flush();
-            return WaitForResponse(process, 2, ResponseTimeout, out string? response)
-                ? ParseLifetimeTokensResponse(response)
-                : null;
+            if (!WaitForResponse(process, 2, ResponseTimeout, out string? response)) return null;
+            long? lifetime = ParseLifetimeTokensResponse(response);
+            process.StandardInput.WriteLine("{\"id\":3,\"method\":\"account/rateLimits/read\",\"params\":null}");
+            process.StandardInput.Flush();
+            CodexAccountReading limits = WaitForResponse(process, 3, ResponseTimeout, out string? limitResponse)
+                ? ParseAccountLimitsResponse(limitResponse) : new(null, null, null);
+            return limits with { LifetimeTokens = lifetime };
         }
         catch (Exception exception) when (
             exception is IOException or InvalidOperationException or JsonException or

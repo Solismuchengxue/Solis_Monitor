@@ -86,7 +86,9 @@ public sealed record DeviceMetricsEnvelope(
                 snapshot.Codex.MainQuotaResetAt ?? string.Empty,
                 Value(snapshot.Codex.SparkWeeklyRemainingPercent),
                 snapshot.Codex.SparkQuotaName ?? string.Empty,
-                snapshot.Codex.SparkQuotaResetAt ?? string.Empty),
+                snapshot.Codex.SparkQuotaResetAt ?? string.Empty,
+                snapshot.Codex.CreditBalance,
+                snapshot.Codex.AvailableFullResets),
             new DeviceEnvironmentMetrics(
                 snapshot.Weather.Location ?? string.Empty,
                 snapshot.Weather.Description ?? string.Empty,
@@ -195,7 +197,11 @@ public sealed record DeviceCodexMetrics(
     [property: JsonPropertyName("main_quota_reset_at")] string MainQuotaResetAt,
     [property: JsonPropertyName("spark_weekly_remaining")] double? SparkWeeklyRemaining,
     [property: JsonPropertyName("spark_quota_name")] string SparkQuotaName,
-    [property: JsonPropertyName("spark_quota_reset_at")] string SparkQuotaResetAt);
+    [property: JsonPropertyName("spark_quota_reset_at")] string SparkQuotaResetAt,
+    [property: JsonPropertyName("credit_balance")]
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] double? CreditBalance = null,
+    [property: JsonPropertyName("full_resets_available")]
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] int? FullResetsAvailable = null);
 
 public sealed record DeviceEnvironmentMetrics(
     [property: JsonPropertyName("location")] string Location,

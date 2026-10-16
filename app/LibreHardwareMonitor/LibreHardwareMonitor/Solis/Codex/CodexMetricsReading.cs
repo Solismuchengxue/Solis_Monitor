@@ -21,7 +21,9 @@ public sealed record CodexMetricsReading(
     string? Model = null,
     string? ReasoningEffort = null,
     double? TotalTokens = null,
-    double? WeeklyUsedTokens = null)
+    double? WeeklyUsedTokens = null,
+    double? CreditBalance = null,
+    int? AvailableFullResets = null)
 {
     public static CodexMetricsReading Empty(string? errorCategory = null) =>
         new(false, null, null, null, null, null, null, null, errorCategory);

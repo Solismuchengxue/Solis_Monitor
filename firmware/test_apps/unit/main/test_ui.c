@@ -263,6 +263,38 @@ TEST_CASE("weather icon and wind changes update Codex weather card", "[ui]")
     heap_caps_free(pixels);
 }
 
+TEST_CASE("credit updates change only the retired Spark area", "[ui]")
+{
+    const size_t bytes = 800 * 480 * sizeof(uint16_t);
+    uint16_t *pixels = heap_caps_calloc(800 * 480, sizeof(uint16_t), MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+    uint16_t *before = heap_caps_malloc(bytes, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+    TEST_ASSERT_NOT_NULL(pixels);
+    TEST_ASSERT_NOT_NULL(before);
+    renderer_surface_t surface = {.pixels = pixels, .width = 800, .height = 480, .stride = 800};
+    dashboard_state_t state = make_test_state();
+    state.codex.credit_balance = 61925.898464;
+    state.codex.full_resets_available = 2;
+    ui_dirty_list_t dirty = {0};
+    ui_render_full(&surface, UI_PAGE_CODEX, &state, &dirty);
+    memcpy(before, pixels, bytes);
+    state.codex.credit_balance = 0;
+    state.codex.full_resets_available = 0;
+    state.codex.spark_weekly_remaining = 99;
+    ui_render_update(&surface, UI_PAGE_CODEX, &state, &dirty);
+    bool credits_changed = false;
+    for (int y = 0; y < 480; ++y) {
+        for (int x = 0; x < 800; ++x) {
+            if (x >= 448 && x < 760 && y >= 200 && y < 320)
+                credits_changed |= before[y * 800 + x] != pixels[y * 800 + x];
+            else
+                TEST_ASSERT_EQUAL_UINT16(before[y * 800 + x], pixels[y * 800 + x]);
+        }
+    }
+    TEST_ASSERT_TRUE_MESSAGE(credits_changed, "credit changes must update rendered pixels");
+    heap_caps_free(before);
+    heap_caps_free(pixels);
+}
+
 TEST_CASE("night backlight confirmation dirties the full screen", "[ui]")
 {
     uint16_t *pixels = heap_caps_calloc(

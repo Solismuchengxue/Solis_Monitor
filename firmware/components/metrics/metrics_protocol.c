@@ -546,6 +546,18 @@ static bool read_system(const cJSON *object, system_metrics_t *system)
            read_storage_devices(object, system);
 }
 
+static bool read_optional_double(const cJSON *object, const char *name, double *value)
+{
+    const cJSON *item = cJSON_GetObjectItemCaseSensitive(object, name);
+    if (!item || cJSON_IsNull(item)) {
+        *value = NAN;
+        return true;
+    }
+    if (!cJSON_IsNumber(item) || !isfinite(item->valuedouble)) return false;
+    *value = item->valuedouble;
+    return true;
+}
+
 static bool read_codex(const cJSON *object, codex_metrics_t *codex)
 {
     return read_bool(object, "online", &codex->online) &&
@@ -559,6 +571,8 @@ static bool read_codex(const cJSON *object, codex_metrics_t *codex)
            read_optional_number(object, "context_window_k", &codex->context_window_k) &&
            read_optional_number(object, "total_tokens", &codex->total_tokens) &&
            read_optional_number(object, "weekly_used_tokens", &codex->weekly_used_tokens) &&
+           read_optional_double(object, "credit_balance", &codex->credit_balance) &&
+           read_optional_double(object, "full_resets_available", &codex->full_resets_available) &&
            read_optional_number(object, "weekly_remaining", &codex->main_weekly_remaining) &&
            read_number_when_present(object, "main_weekly_remaining",
                                     &codex->main_weekly_remaining) &&

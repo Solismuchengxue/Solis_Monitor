@@ -197,10 +197,9 @@ def _render_codex(root: Path) -> Image.Image:
     _draw_progress(surface, (448, 128, 312, 8), 72, PURPLE)
     _draw_text(surface, 448, 160, "重置 周一 08:00", font20, LABEL)
     _fill_rect(surface, (448, 188, 312, 2), TRACK)
-    _draw_text(surface, 448, 218, "GPT-5.3-Codex-Spark", font20, LABEL)
-    _draw_text(surface, 700, 218, "86%", font24, WHITE)
-    _draw_progress(surface, (448, 240, 312, 8), 86, PURPLE)
-    _draw_text(surface, 448, 272, "重置 周一 08:00", font20, LABEL)
+    _draw_text(surface, 448, 218, "额度余额", font20, LABEL)
+    _draw_text(surface, 448, 254, "61,926", font24, CYAN)
+    _draw_text(surface, 448, 294, "完全重置可用 2 次", font20, LABEL)
 
     _draw_rgba565(surface, assets / "generated_weather_m00.rgba565", 40, 378, 48, 48)
     _draw_text(surface, 80, 370, "天气位置", font20, LABEL)

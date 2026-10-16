@@ -101,7 +101,9 @@ public sealed record CodexMetrics(
     string? MainQuotaResetAt,
     MetricReading SparkWeeklyRemainingPercent,
     string? SparkQuotaName,
-    string? SparkQuotaResetAt)
+    string? SparkQuotaResetAt,
+    double? CreditBalance = null,
+    int? AvailableFullResets = null)
 {
     public static CodexMetrics Empty { get; } = new(
         false,
