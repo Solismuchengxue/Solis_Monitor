@@ -18,6 +18,7 @@ public sealed class SolisDesktopPresenter : IDisposable
     private readonly DesktopStartupSettingsController _startupSettings;
     private readonly SolisDesktopServiceActions _serviceActions;
     private readonly SolisControlCenterView _view;
+    private readonly Func<bool> _canRender;
     private readonly DeveloperModeUnlockTracker _developerUnlockTracker = new();
     private CancellationTokenSource? _brightnessSaveCancellation;
     private DeviceDisplaySettings? _deviceSettings;
@@ -31,9 +32,20 @@ public sealed class SolisDesktopPresenter : IDisposable
         SolisControlCenterView view,
         DesktopStartupSettingsController startupSettings,
         SolisDesktopServiceActions serviceActions)
+        : this(runtime, view, startupSettings, serviceActions, () => true)
+    {
+    }
+
+    public SolisDesktopPresenter(
+        SolisRuntime runtime,
+        SolisControlCenterView view,
+        DesktopStartupSettingsController startupSettings,
+        SolisDesktopServiceActions serviceActions,
+        Func<bool> canRender)
     {
         _runtime = runtime ?? throw new ArgumentNullException(nameof(runtime));
         _view = view ?? throw new ArgumentNullException(nameof(view));
+        _canRender = canRender ?? throw new ArgumentNullException(nameof(canRender));
         _startupSettings = startupSettings ??
             throw new ArgumentNullException(nameof(startupSettings));
         _serviceActions = serviceActions ??
@@ -63,10 +75,11 @@ public sealed class SolisDesktopPresenter : IDisposable
     {
         ThrowIfDisposed();
         _runtime.ObserveDeviceStatus(DateTimeOffset.Now, false);
+        // Settings coordination and async results remain live while the window is hidden.
+        EnsureDeviceSettingsLoaded();
         UpdateDevice();
         UpdateStartup();
         UpdateService();
-        EnsureDeviceSettingsLoaded();
     }
 
     public void Dispose()
@@ -97,6 +110,9 @@ public sealed class SolisDesktopPresenter : IDisposable
 
     private void UpdateDevice()
     {
+        if (_disposed || !_canRender())
+            return;
+
         DeviceDiscoveryState discovery = _runtime.CurrentDevice;
         DiscoveredDevice? device = discovery.Device;
         string deviceState = device is null
@@ -137,6 +153,9 @@ public sealed class SolisDesktopPresenter : IDisposable
 
     private void UpdateStartup()
     {
+        if (_disposed || !_canRender())
+            return;
+
         _view.UpdateStartup(new SolisStartupViewState(
             _startupSettings.SilentStartup,
             _startupSettings.AutoStart,
@@ -145,6 +164,9 @@ public sealed class SolisDesktopPresenter : IDisposable
 
     private void UpdateService()
     {
+        if (_disposed || !_canRender())
+            return;
+
         SolisDiagnosticsSnapshot diagnostics = _runtime.Diagnostics;
         DiagnosticCheckState overallState = GetOverallState(diagnostics);
         string overallStatus = overallState switch

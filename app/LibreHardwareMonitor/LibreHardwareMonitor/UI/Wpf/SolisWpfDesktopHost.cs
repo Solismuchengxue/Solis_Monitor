@@ -114,7 +114,9 @@ public sealed class SolisWpfDesktopHost : IDisposable
             _backend.Runtime,
             _view,
             _startupSettings,
-            serviceActions);
+            serviceActions,
+            () => _window.IsVisible &&
+                  _window.WindowState != WindowState.Minimized);
         _taskbar = new SolisTaskbarHost(
             ShowWindow,
             getSilentStartup,
@@ -158,6 +160,7 @@ public sealed class SolisWpfDesktopHost : IDisposable
         if (_window.WindowState == WindowState.Minimized)
             _window.WindowState = WindowState.Normal;
 
+        _presenter.Refresh();
         _window.Activate();
         _window.Topmost = true;
         _window.Topmost = false;

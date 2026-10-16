@@ -4,6 +4,15 @@ internal static partial class SmokeTests
     {
     var tests = new (string Name, Action Run)[]
     {
+        ("隐藏呈现器保留后台观察且不刷新页面", HiddenPresenterKeepsBackgroundObservation),
+        ("恢复可见后立即呈现最新状态", PresenterVisibleRefreshRestoresLatestState),
+        ("隐藏期间异步读取设置保留结果", HiddenPresenterRetainsAsyncSettings),
+        ("隐藏期间重试设置并清理失效配对", HiddenPresenterRetriesSettingsAndResetsUnpaired),
+        ("隐藏期间保存与重启结果不丢失", HiddenPresenterKeepsSaveAndRestartResults),
+        ("反复显隐不重复订阅且释放幂等", PresenterVisibilityCyclesKeepSingleSubscription),
+        ("释放后忽略在途设置完成", DisposedPresenterIgnoresPendingSettings),
+        ("主窗口显示与恢复立即刷新", HostShowImmediatelyRefreshesWithoutStartingBackend),
+        ("隐藏刷新降低至少两成托管分配", HiddenPresenterReducesSteadyRefreshAllocations),
         ("手动网卡优先", ManualSelectionWins),
         ("自动选择系统出口", BestInterfaceSelectionWins),
         ("默认网关回退", GatewayFallbackWorks),
