@@ -11,16 +11,16 @@
 <p><strong>A production-minded IoT system that connects desktop data collection, device provisioning, authenticated control, fault recovery and rollback-safe OTA delivery.</strong></p>
 
 <p>
-  <a href="https://github.com/Solismuchengxue/Solis_Monitor/releases/tag/v0.9.6-beta.5"><img alt="Release Beta 5" src="https://img.shields.io/badge/release-v0.9.6--beta.5-1f6feb?style=for-the-badge"></a>
+  <a href="https://github.com/Solismuchengxue/Solis_Monitor/releases/tag/v0.9.6-beta.6"><img alt="Beta 6 Latest Release" src="https://img.shields.io/badge/release-v0.9.6--beta.6-1f6feb?style=for-the-badge"></a>
   <a href="https://github.com/Solismuchengxue/Solis_Monitor/actions/workflows/ci.yml"><img alt="CI Status" src="https://img.shields.io/github/actions/workflow/status/Solismuchengxue/Solis_Monitor/ci.yml?branch=main&style=for-the-badge&label=CI"></a>
   <a href="LICENSE"><img alt="MPL 2.0 License" src="https://img.shields.io/badge/license-MPL--2.0-7c3aed?style=for-the-badge"></a>
   <img alt="Windows x64" src="https://img.shields.io/badge/Windows-x64-0078d4?style=for-the-badge&logo=windows11&logoColor=white">
   <img alt="ESP32-S3" src="https://img.shields.io/badge/ESP32--S3-ESP--IDF_6.0.2-e7352c?style=for-the-badge&logo=espressif&logoColor=white">
-  <img alt="226 automated checks" src="https://img.shields.io/badge/automated_checks-226-2ea043?style=for-the-badge">
+  <img alt="155 desktop smoke tests" src="https://img.shields.io/badge/desktop_smoke_tests-155-2ea043?style=for-the-badge">
 </p>
 
 <p>
-  <a href="https://github.com/Solismuchengxue/Solis_Monitor/releases/tag/v0.9.6-beta.5">Download Beta 5</a> ·
+  <a href="https://github.com/Solismuchengxue/Solis_Monitor/releases/tag/v0.9.6-beta.6">Download Beta 6 · Latest</a> ·
   <a href="DESIGN.md">Architecture</a> ·
   <a href="docs/PROTOCOL.md">Protocol</a> ·
   <a href="docs/TESTING.md">Verification</a>
@@ -43,7 +43,7 @@ Solis Monitor turns heterogeneous PC, network, Codex and weather data into a sta
 | **Device lifecycle** | AP provisioning, LAN discovery, six-digit pairing, token rotation, remote control and local OTA |
 | **Operational resilience** | Last-known-good snapshots, isolated collectors, bounded redacted logs and automatic recovery |
 | **Delivery** | Windows installer, portable package, firmware image and SHA-256 manifest |
-| **Verification** | 128 desktop smoke tests + 78 firmware unit tests + 20 Python checks = **226 checks** |
+| **Verification** | Beta 6: 155 desktop smoke tests and 21 Python checks passed; 82 firmware test definitions built, not executed on hardware |
 
 ## Forward-Deployed Engineering in Practice
 
@@ -138,9 +138,9 @@ The PC is the source of truth for remote telemetry and device management. The ES
 
 | Evidence | What it protects |
 | --- | --- |
-| **128 desktop smoke tests** | Startup, metrics, Codex parsing, device API, pairing, diagnostics, notifications, OTA validation and background-failure recovery |
-| **78 ESP-IDF unit tests** | Protocol parsing, provisioning, configuration, device control, environment sensing, UI state and OTA behavior |
-| **20 Python checks** | Reproducible assets, generated resources, repository structure and firmware-size constraints |
+| **155 desktop smoke tests** | All passed for Beta 6; startup, metrics, Codex parsing, device API, pairing, diagnostics, notifications, OTA validation and background-failure recovery |
+| **82 ESP-IDF unit-test definitions** | Protocol parsing, provisioning, configuration, device control, environment sensing, UI state and OTA behavior; the Beta 6 test image was built, not executed on hardware |
+| **21 Python checks** | All passed for Beta 6; reproducible assets, generated resources, repository structure and firmware-size constraints |
 | **Physical-device acceptance** | ESP32-S3 boot, 800×480 rendering, LAN reconnect, local sensor input, OTA and rollback behavior |
 | **Windows delivery acceptance** | Installer upgrade, portable launch, runtime prerequisites and 100% / 125% / 150% DPI coverage |
 
@@ -148,14 +148,18 @@ The complete commands, current boundaries and hands-on procedures are documented
 
 ## Download & Run
 
-The current GitHub Latest release is [Solis Monitor v0.9.6 Beta 5](https://github.com/Solismuchengxue/Solis_Monitor/releases/tag/v0.9.6-beta.5), containing Windows desktop version `0.9.6` and ESP32-S3 firmware version `0.1.5`.
+The current GitHub Latest release is [Solis Monitor v0.9.6 Beta 6](https://github.com/Solismuchengxue/Solis_Monitor/releases/tag/v0.9.6-beta.6), containing Windows desktop version `0.9.6-beta.6` and ESP32-S3 firmware version `0.1.6-beta.6`, built from an isolated source snapshot of commit `ae3f1e8`.
+
+This release adds credit balance and available full-reset counts, fixes active-project detection, incremental JSONL tail handling and tray-startup recovery, and avoids unnecessary hidden-window refreshes. The artifacts passed build and offline integrity checks, but these exact rebuilt binaries have not undergone installation, startup or on-device OTA acceptance. Earlier candidate acceptance does not validate these exact binaries, and resident-memory savings remain unproven.
 
 | Artifact | Purpose |
 | --- | --- |
-| [Windows x64 installer](https://github.com/Solismuchengxue/Solis_Monitor/releases/download/v0.9.6-beta.5/SolisMonitor-0.9.6-win-x64-setup.exe) | Standard installation, Start menu entry and optional desktop shortcut |
-| [Windows x64 portable package](https://github.com/Solismuchengxue/Solis_Monitor/releases/download/v0.9.6-beta.5/SolisMonitor-0.9.6-win-x64-portable.zip) | Extract and run `SolisMonitor/SolisMonitor.exe` |
-| [ESP32-S3 OTA firmware](https://github.com/Solismuchengxue/Solis_Monitor/releases/download/v0.9.6-beta.5/solis_monitor-0.1.5-esp32s3.bin) | LAN upgrade for devices already migrated to the dual-OTA layout |
-| [SHA-256 manifest](https://github.com/Solismuchengxue/Solis_Monitor/releases/download/v0.9.6-beta.5/SHA256SUMS.txt) | Download-integrity verification |
+| [Windows x64 installer](https://github.com/Solismuchengxue/Solis_Monitor/releases/download/v0.9.6-beta.6/SolisMonitor-0.9.6-beta.6-win-x64-setup.exe) | Standard installation, Start menu entry and optional desktop shortcut |
+| [Windows x64 portable package](https://github.com/Solismuchengxue/Solis_Monitor/releases/download/v0.9.6-beta.6/SolisMonitor-0.9.6-beta.6-win-x64-portable.zip) | Extract and run `SolisMonitor/SolisMonitor.exe` |
+| [ESP32-S3 OTA firmware](https://github.com/Solismuchengxue/Solis_Monitor/releases/download/v0.9.6-beta.6/solis_monitor-0.1.6-beta.6-esp32s3.bin) | LAN upgrade for devices already migrated to the dual-OTA layout; not a complete first-flash image |
+| [SHA-256 manifest](https://github.com/Solismuchengxue/Solis_Monitor/releases/download/v0.9.6-beta.6/SHA256SUMS.txt) | Download-integrity verification |
+| [PC payload manifest](https://github.com/Solismuchengxue/Solis_Monitor/releases/download/v0.9.6-beta.6/release-manifest.json) | Sizes and SHA-256 hashes for all 86 payload files |
+| [Build and verification information](https://github.com/Solismuchengxue/Solis_Monitor/releases/download/v0.9.6-beta.6/BUILD-INFO.json) | Source commit, version overrides and verification boundaries |
 
 Windows requires x64 Windows 10 version 1809 or later and the [.NET 10 Desktop Runtime](https://dotnet.microsoft.com/en-us/download/dotnet/10.0). Native notifications additionally use [Windows App Runtime 2.3.1](https://learn.microsoft.com/en-us/windows/apps/windows-app-sdk/downloads). Administrator privileges are recommended for complete hardware-sensor access.
 

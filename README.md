@@ -11,16 +11,16 @@
 <p><strong>一套面向真实交付的 IoT 系统，贯通桌面数据采集、设备配网、鉴权控制、故障恢复与可回滚 OTA。</strong></p>
 
 <p>
-  <a href="https://github.com/Solismuchengxue/Solis_Monitor/releases/tag/v0.9.6-beta.5"><img alt="Beta 5 版本" src="https://img.shields.io/badge/release-v0.9.6--beta.5-1f6feb?style=for-the-badge"></a>
+  <a href="https://github.com/Solismuchengxue/Solis_Monitor/releases/tag/v0.9.6-beta.6"><img alt="Beta 6 Latest 版本" src="https://img.shields.io/badge/release-v0.9.6--beta.6-1f6feb?style=for-the-badge"></a>
   <a href="https://github.com/Solismuchengxue/Solis_Monitor/actions/workflows/ci.yml"><img alt="CI 状态" src="https://img.shields.io/github/actions/workflow/status/Solismuchengxue/Solis_Monitor/ci.yml?branch=main&style=for-the-badge&label=CI"></a>
   <a href="LICENSE"><img alt="MPL 2.0 许可证" src="https://img.shields.io/badge/license-MPL--2.0-7c3aed?style=for-the-badge"></a>
   <img alt="Windows x64" src="https://img.shields.io/badge/Windows-x64-0078d4?style=for-the-badge&logo=windows11&logoColor=white">
   <img alt="ESP32-S3" src="https://img.shields.io/badge/ESP32--S3-ESP--IDF_6.0.2-e7352c?style=for-the-badge&logo=espressif&logoColor=white">
-  <img alt="226 项自动化检查" src="https://img.shields.io/badge/automated_checks-226-2ea043?style=for-the-badge">
+  <img alt="155 项桌面冒烟测试" src="https://img.shields.io/badge/desktop_smoke_tests-155-2ea043?style=for-the-badge">
 </p>
 
 <p>
-  <a href="https://github.com/Solismuchengxue/Solis_Monitor/releases/tag/v0.9.6-beta.5">下载 Beta 5</a> ·
+  <a href="https://github.com/Solismuchengxue/Solis_Monitor/releases/tag/v0.9.6-beta.6">下载 Beta 6 · Latest</a> ·
   <a href="DESIGN.md">总体设计</a> ·
   <a href="docs/PROTOCOL.md">通信协议</a> ·
   <a href="docs/TESTING.md">测试验证</a>
@@ -43,7 +43,7 @@ Solis Monitor 将电脑硬件、网络、Codex 和天气等异构数据统一为
 | **设备生命周期** | AP 配网、局域网发现、六位码配对、令牌轮换、远程控制与本地 OTA |
 | **运行可靠性** | 最后有效快照、采集故障隔离、有界脱敏日志与自动恢复 |
 | **发布交付** | Windows 安装包、便携包、固件镜像与 SHA-256 校验清单 |
-| **自动化验证** | 128 项桌面冒烟测试 + 78 项固件单元测试 + 20 项 Python 检查 = **226 项检查** |
+| **自动化验证** | Beta 6：155 项桌面冒烟与 21 项 Python 检查通过；82 项固件测试定义已编译，未在设备上执行 |
 
 ## 面向现场的工程交付
 
@@ -138,9 +138,9 @@ PC 端是远程指标和设备管理的数据权威。ESP32-S3 每秒拉取一�
 
 | 证据 | 覆盖范围 |
 | --- | --- |
-| **128 项桌面冒烟测试** | 启动、指标、Codex 解析、设备 API、配对、诊断、通知、OTA 校验和后台故障恢复 |
-| **78 项 ESP-IDF 单元测试** | 协议解析、配网、配置、设备控制、环境采集、UI 状态和 OTA 行为 |
-| **20 项 Python 检查** | 可重复资源、生成文件、仓库结构和固件容量约束 |
+| **155 项桌面冒烟测试** | Beta 6 全部通过；覆盖启动、指标、Codex 解析、设备 API、配对、诊断、通知、OTA 校验和后台故障恢复 |
+| **82 项 ESP-IDF 单元测试定义** | 覆盖协议解析、配网、配置、设备控制、环境采集、UI 状态和 OTA 行为；Beta 6 已编译测试镜像，未在设备上执行 |
+| **21 项 Python 检查** | Beta 6 全部通过；覆盖可重复资源、生成文件、仓库结构和固件容量约束 |
 | **实体设备验收** | ESP32-S3 启动、800×480 渲染、局域网重连、本地传感器、OTA 和回滚行为 |
 | **Windows 交付验收** | 安装器覆盖升级、便携版启动、运行时依赖与 100% / 125% / 150% DPI 覆盖 |
 
@@ -148,14 +148,18 @@ PC 端是远程指标和设备管理的数据权威。ESP32-S3 每秒拉取一�
 
 ## 下载运行
 
-当前 GitHub Latest 版本为 [Solis Monitor v0.9.6 Beta 5](https://github.com/Solismuchengxue/Solis_Monitor/releases/tag/v0.9.6-beta.5)，包含 Windows 桌面端 `0.9.6` 和 ESP32-S3 固件 `0.1.5`。
+当前 GitHub Latest 版本为 [Solis Monitor v0.9.6 Beta 6](https://github.com/Solismuchengxue/Solis_Monitor/releases/tag/v0.9.6-beta.6)，包含 Windows 桌面端 `0.9.6-beta.6` 和 ESP32-S3 固件 `0.1.6-beta.6`，从提交 `ae3f1e8` 的独立源码快照构建。
+
+本版增加额度余额和完全重置次数展示，修复当前项目/活跃状态、JSONL 增量尾记录和开机托盘恢复，并减少隐藏窗口的无效刷新。发布制品通过构建与离线完整性检查，未执行本批新制品的安装、启动或真机 OTA 验收；此前候选的人工验收不替代本批二进制验收，常驻内存收益仍未证实。
 
 | 文件 | 用途 |
 | --- | --- |
-| [Windows x64 安装包](https://github.com/Solismuchengxue/Solis_Monitor/releases/download/v0.9.6-beta.5/SolisMonitor-0.9.6-win-x64-setup.exe) | 标准安装、开始菜单入口和可选桌面快捷方式 |
-| [Windows x64 便携包](https://github.com/Solismuchengxue/Solis_Monitor/releases/download/v0.9.6-beta.5/SolisMonitor-0.9.6-win-x64-portable.zip) | 解压后运行 `SolisMonitor/SolisMonitor.exe` |
-| [ESP32-S3 OTA 固件](https://github.com/Solismuchengxue/Solis_Monitor/releases/download/v0.9.6-beta.5/solis_monitor-0.1.5-esp32s3.bin) | 已迁移至双 OTA 分区设备的局域网升级 |
-| [SHA-256 校验清单](https://github.com/Solismuchengxue/Solis_Monitor/releases/download/v0.9.6-beta.5/SHA256SUMS.txt) | 校验下载文件完整性 |
+| [Windows x64 安装包](https://github.com/Solismuchengxue/Solis_Monitor/releases/download/v0.9.6-beta.6/SolisMonitor-0.9.6-beta.6-win-x64-setup.exe) | 标准安装、开始菜单入口和可选桌面快捷方式 |
+| [Windows x64 便携包](https://github.com/Solismuchengxue/Solis_Monitor/releases/download/v0.9.6-beta.6/SolisMonitor-0.9.6-beta.6-win-x64-portable.zip) | 解压后运行 `SolisMonitor/SolisMonitor.exe` |
+| [ESP32-S3 OTA 固件](https://github.com/Solismuchengxue/Solis_Monitor/releases/download/v0.9.6-beta.6/solis_monitor-0.1.6-beta.6-esp32s3.bin) | 已迁移至双 OTA 分区设备的局域网升级，不是首次烧录的完整镜像 |
+| [SHA-256 校验清单](https://github.com/Solismuchengxue/Solis_Monitor/releases/download/v0.9.6-beta.6/SHA256SUMS.txt) | 校验下载文件完整性 |
+| [PC 载荷清单](https://github.com/Solismuchengxue/Solis_Monitor/releases/download/v0.9.6-beta.6/release-manifest.json) | 86 个载荷文件的大小与 SHA-256 |
+| [构建与验证信息](https://github.com/Solismuchengxue/Solis_Monitor/releases/download/v0.9.6-beta.6/BUILD-INFO.json) | 源码提交、版本参数和未验证边界 |
 
 Windows 端需要 x64 Windows 10 1809 或更高版本，以及 [.NET 10 Desktop Runtime](https://dotnet.microsoft.com/en-us/download/dotnet/10.0)。原生通知还会使用 [Windows App Runtime 2.3.1](https://learn.microsoft.com/en-us/windows/apps/windows-app-sdk/downloads)。完整访问硬件传感器时建议使用管理员权限。
 
